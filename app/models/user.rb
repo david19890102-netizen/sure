@@ -683,6 +683,23 @@ class User < ApplicationRecord
     end
   end
 
+  # Saves a drag of the big account groups. `scope` is the sidebar tab the
+  # drag happened on; only that tab's types are accepted, and they are merged
+  # into the full order so the other tabs keep their relative positions.
+  def update_account_group_order(group_keys, scope:)
+    merged = nil
+
+    transaction do
+      lock!
+      merged = AccountGroupOrder.merge(account_group_order, group_keys, scope: scope)
+      raise ActiveRecord::Rollback if merged.nil?
+
+      update!(account_group_order: merged)
+    end
+
+    merged.present?
+  end
+
   # Locked read-modify-write of the preferences JSONB: yields a copy of the
   # current preferences (re-read under a row lock) to change in place, then
   # saves it, so concurrent updates of other keys are not lost. Attributes set

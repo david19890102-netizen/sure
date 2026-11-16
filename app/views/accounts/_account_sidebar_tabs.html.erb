@@ -4,7 +4,7 @@
     ERB dependency tracker mis-parses as a bogus "Ds/D" template dependency
     and then logs "Couldn't find template for digesting: Ds/D" on every cache
     miss. The cache key is already manually versioned via
-    account_sidebar_tabs_cache_key ("account_sidebar_tabs_v7",
+    account_sidebar_tabs_cache_key ("account_sidebar_tabs_v8",
     invalidate_on_data_updates: true), so we opt out of automatic template
     digesting. Bump that version suffix when changing this template or its
     sidebar dependencies. %>
@@ -60,11 +60,12 @@
 
         <%= render "accounts/sort_mode_bar", sortable: sortable && family.balance_sheet.assets.account_groups.any? %>
 
-        <div>
-          <% family.balance_sheet.assets.account_groups.each do |group| %>
-            <%= render "accounts/accountable_group", account_group: group, mobile: mobile, sortable: sortable, reconciliation_indicators: reconciliation_indicators %>
-          <% end %>
-        </div>
+        <%= render "accounts/account_group_list",
+              account_groups: family.balance_sheet.assets.account_groups,
+              mobile: mobile,
+              sortable: sortable,
+              reconciliation_indicators: reconciliation_indicators,
+              scope: "asset" %>
       </div>
     <% end %>
 
@@ -92,11 +93,12 @@
 
         <%= render "accounts/sort_mode_bar", sortable: sortable && family.balance_sheet.liabilities.account_groups.any? %>
 
-        <div>
-          <% family.balance_sheet.liabilities.account_groups.each do |group| %>
-            <%= render "accounts/accountable_group", account_group: group, mobile: mobile, sortable: sortable, reconciliation_indicators: reconciliation_indicators %>
-          <% end %>
-        </div>
+        <%= render "accounts/account_group_list",
+              account_groups: family.balance_sheet.liabilities.account_groups,
+              mobile: mobile,
+              sortable: sortable,
+              reconciliation_indicators: reconciliation_indicators,
+              scope: "liability" %>
       </div>
     <% end %>
 
@@ -124,11 +126,13 @@
 
         <%= render "accounts/sort_mode_bar", sortable: sortable && family.balance_sheet.account_groups.any? %>
 
-        <div>
-          <% family.balance_sheet.account_groups.each do |group| %>
-            <%= render "accounts/accountable_group", account_group: group, mobile: mobile, all_tab: true, sortable: sortable, reconciliation_indicators: reconciliation_indicators %>
-          <% end %>
-        </div>
+        <%= render "accounts/account_group_list",
+              account_groups: family.balance_sheet.account_groups,
+              mobile: mobile,
+              sortable: sortable,
+              reconciliation_indicators: reconciliation_indicators,
+              scope: "all",
+              all_tab: true %>
       </div>
     <% end %>
   <% end %>
@@ -139,6 +143,32 @@
   // Turbo re-renders. Includes a nonce for CSP compliance
   // (matches the dashboard balance sheet).
   (function () {
+    // Fill the dragged keys into the slots they already occupy. Keys this
+    // list does not show (a liability on the asset tab) stay where they are.
+    function applyGroupOrder(list, order) {
+      function groupChildren() {
+        return Array.prototype.filter.call(list.children, function (child) {
+          return child.nodeType === 1 && child.hasAttribute("data-group-key");
+        });
+      }
+
+      var items = groupChildren();
+      if (!items.length) return;
+      var ids = items.map(function (item) { return item.getAttribute("data-sortable-list-id"); });
+      var dragged = {};
+      order.forEach(function (id) { dragged[id] = true; });
+      var queue = order.filter(function (id) { return ids.indexOf(id) !== -1; });
+      if (!queue.length) return;
+      var nextIds = ids.map(function (id) { return dragged[id] ? queue.shift() : id; });
+      var byId = {};
+      items.forEach(function (item) { byId[item.getAttribute("data-sortable-list-id")] = item; });
+      nextIds.forEach(function (id, index) {
+        var item = byId[id];
+        var current = groupChildren()[index];
+        if (item && current && current !== item) current.before(item);
+      });
+    }
+
     function setLabel(btn, expanded) {
       btn.setAttribute("aria-expanded", expanded ? "true" : "false");
       btn.setAttribute("aria-label", expanded ? btn.dataset.collapseLabel : btn.dataset.expandLabel);
@@ -168,6 +198,19 @@
     // and covers both the desktop and mobile sidebar instances).
     if (!window.__sidebarExpandAllBound) {
       window.__sidebarExpandAllBound = true;
+
+      // A drag on one tab (All, Assets, or Debts) reorders the same groups
+      // on the other tabs, keeping the relative order. Copies of the same
+      // tab are already mirrored by the sortable list.
+      document.addEventListener("sortable-list:saved", function (event) {
+        var list = event.target;
+        if (!list || list.getAttribute("data-account-group-order") === null) return;
+        var order = event.detail && event.detail.order;
+        if (!order) return;
+        document.querySelectorAll("[data-account-group-order]").forEach(function (other) {
+          applyGroupOrder(other, order);
+        });
+      });
 
       document.addEventListener("click", function (e) {
         var btn = e.target.closest("[data-account-sidebar-expand-all]");

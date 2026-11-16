@@ -149,6 +149,36 @@ class AccountManualOrderTest < ApplicationSystemTestCase
     assert_nil @user.reload.manual_account_order["depository"]
   end
 
+  test "moving a group with the keyboard saves it and updates the other tabs" do
+    visit account_path(accounts(:depository))
+
+    within_testid("account-sidebar-tabs") do
+      find("button[aria-label='#{I18n.t("accounts.sidebar.sort_mode.start")}']", visible: true).click
+
+      handle = find("button[aria-label='#{I18n.t("accounts.sidebar.reorder_group", group: Investment.display_name)}']", visible: true)
+      handle.send_keys(:enter)
+      handle.send_keys(:up)
+      handle.send_keys(:enter)
+
+      assert_equal "investment", group_keys("asset").first
+    end
+
+    # The other tabs update once the save lands, including the hidden All tab.
+    assert_eventually { group_keys("all", visible: :all).first == "investment" }
+    all_keys = group_keys("all", visible: :all)
+    assert all_keys.index("depository") < all_keys.index("credit_card")
+
+    assert_eventually do
+      order = @user.reload.account_group_order
+      order.index("investment") && order.index("investment") < order.index("depository")
+    end
+
+    visit account_path(accounts(:depository))
+    within_testid("account-sidebar-tabs") do
+      assert_equal "investment", group_keys("asset").first
+    end
+  end
+
   test "a move is mirrored in the other sidebar tabs" do
     checking = accounts(:depository)
     plaid = accounts(:connected)
@@ -231,6 +261,11 @@ class AccountManualOrderTest < ApplicationSystemTestCase
   private
     def open_group_count
       evaluate_script("document.querySelectorAll(\"[data-testid='account-sidebar-tabs'] details[open]\").length")
+    end
+
+    def group_keys(scope, visible: true)
+      list = all("[data-sortable-sublist-url-value='#{reorder_groups_accounts_path(scope: scope)}']", visible: visible).first
+      list.all(:xpath, "./*[@data-group-key]", visible: :all).map { |item| item["data-group-key"] }
     end
 
     def visible_depository_ids

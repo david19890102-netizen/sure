@@ -137,6 +137,15 @@ zh-TW:
       new_debt: 新增負債
       new_account: 新增帳戶
       new_account_group: 新增%{account_group}
+      expand_all: 全部展開
+      collapse_all: 全部收合
+      reorder_account: 移動%{account}
+      reorder_group: 移動%{group}
+      reorder_hint: 拖曳以調整順序。使用鍵盤時，按 Enter 後再按方向鍵。
+      sort_mode:
+        start: 排序帳戶
+        hint: 拖曳群組或帳戶的把手即可調整順序。
+        done: 完成
     types:
       depository: 現金/存款
       investment: 投資

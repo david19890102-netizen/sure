@@ -597,11 +597,20 @@ export default class extends Controller {
   mirroredLists() {
     return [
       ...document.querySelectorAll(`[data-controller~='${this.identifier}']`),
-    ].filter(
-      (list) =>
-        list.dataset.sortableListUrlValue === this.urlValue &&
-        list.dataset.sortableListParamValue === this.paramValue,
-    );
+    ].filter((list) => {
+      const controller = this.application.getControllerForElementAndIdentifier(
+        list,
+        this.identifier,
+      );
+      // Match on the controller values so a list registered under another
+      // name (sortable-sublist) mirrors its own copies too.
+      return (
+        controller &&
+        controller.urlValue !== "" &&
+        controller.urlValue === this.urlValue &&
+        controller.paramValue === this.paramValue
+      );
+    });
   }
 
   currentOrder() {
@@ -641,6 +650,15 @@ export default class extends Controller {
       if (response.ok) {
         this.savedOrder = order;
         this.rollbackPending = false;
+        // Lists that show the same records under different filters (the
+        // account sidebar's All / Assets / Debts tabs) listen for this and
+        // apply the new relative order. Same-url copies are already mirrored.
+        this.element.dispatchEvent(
+          new CustomEvent("sortable-list:saved", {
+            bubbles: true,
+            detail: { order },
+          }),
+        );
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error(

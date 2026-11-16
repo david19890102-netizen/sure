@@ -264,6 +264,16 @@ class AccountsController < ApplicationController
     end
   end
 
+  # Saves a drag of the big account groups (cash, investments, credit cards, …)
+  # for the current user. `scope` is the sidebar tab the drag happened on.
+  def reorder_groups
+    if Current.user.update_account_group_order(params[:group_keys], scope: params[:scope])
+      head :ok
+    else
+      head :unprocessable_entity
+    end
+  end
+
   def toggle_active
     if @account.active?
       @account.disable!

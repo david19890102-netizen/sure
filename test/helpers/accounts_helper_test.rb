@@ -54,6 +54,24 @@ class AccountsHelperTest < ActionView::TestCase
     assert_not_equal name_key, sidebar_key
   end
 
+  test "accountable groups stay alphabetical until a group order is saved" do
+    accounts = [ accounts(:credit_card), accounts(:depository), accounts(:investment) ]
+
+    assert_equal %w[CreditCard Depository Investment], ordered_accountable_groups(accounts).map(&:first)
+
+    @user.update_account_group_order(%w[investment credit_card depository], scope: "all")
+
+    assert_equal %w[Investment CreditCard Depository], ordered_accountable_groups(accounts).map(&:first)
+  end
+
+  test "sidebar cache key changes when the group order changes" do
+    before = sidebar_key
+
+    @user.update_account_group_order(%w[crypto depository], scope: "asset")
+
+    assert_not_equal before, sidebar_key
+  end
+
   test "sidebar cache key changes when the manual order changes" do
     @user.update!(default_account_order: "manual")
     before = sidebar_key
