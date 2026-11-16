@@ -1674,6 +1674,17 @@ class UserTest < ActiveSupport::TestCase
     assert_equal({}, @user.reload.manual_account_order)
   end
 
+  test "update_manual_account_order keeps a hidden account in its saved place" do
+    checking = accounts(:depository)
+    plaid = accounts(:connected)
+    @user.update_manual_account_order("depository", [ plaid.id, checking.id ])
+    plaid.update!(hidden: true)
+
+    assert @user.update_manual_account_order("depository", [ checking.id ])
+
+    assert_equal [ plaid.id, checking.id ], @user.reload.manual_account_order["depository"]
+  end
+
   test "update_manual_account_order rejects unknown groups" do
     assert_not @user.update_manual_account_order("transactions", [ accounts(:depository).id ])
     assert_equal({}, @user.reload.manual_account_order)
