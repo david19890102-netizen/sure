@@ -70,7 +70,7 @@ module AccountsHelper
       .pick(Arel.sql("count(*)"), Arel.sql("max(account_providers.updated_at)"))
 
     [
-      family.build_cache_key("account_sidebar_tabs_v7", invalidate_on_data_updates: true),
+      family.build_cache_key("account_sidebar_tabs_v9", invalidate_on_data_updates: true),
       family.manual_reconciliation?,
       Current.user&.id,
       shares_version,
@@ -94,8 +94,28 @@ module AccountsHelper
       # order, must re-render the sidebar right away rather than after the
       # 12h expiry.
       Current.user&.default_account_order,
-      Current.user&.account_order&.manual? ? Digest::SHA256.hexdigest(Current.user.manual_account_order.to_json) : nil
+      Current.user&.account_order&.manual? ? Digest::SHA256.hexdigest(Current.user.manual_account_order.to_json) : nil,
+      # Dragging the big groups must re-render the sidebar immediately.
+      Current.user&.account_group_order
     ]
+  end
+
+  # Groups whose accounts are all hidden are not listed. A group that still has
+  # a visible account stays, and its total still includes the hidden ones.
+  def sidebar_account_groups(account_groups)
+    account_groups.select { |group| group.accounts.any? { |account| !account.hidden? } }
+  end
+
+  # Provider cards and the manual-accounts list group by type. With no saved
+  # group order they stay alphabetical, which is how those lists have always
+  # rendered. A saved order uses the same sequence as the sidebar.
+  def ordered_accountable_groups(accounts)
+    grouped = accounts.group_by(&:accountable_type)
+    order = Current.user&.account_group_order
+    return grouped.sort_by { |type, _| type } if order.blank?
+
+    rank = AccountGroupOrder.ranks(order)
+    grouped.sort_by { |type, _| [ rank.fetch(type.underscore, rank.length), type ] }
   end
 
   # Where the icon shown for the account comes from, for the account form.

@@ -1,0 +1,24 @@
+<%# locals: (account_groups:, mobile:, sortable:, reconciliation_indicators:, scope:, all_tab: false) %>
+
+<%# Fork: the big groups share the manual-sort mode with the accounts inside
+    them. sortable-sublist is the official sortable controller under a second
+    name, so it can wrap the account lists (those stay sortable-list). %>
+<%= tag.div data: (sortable ? {
+      controller: "sortable-sublist",
+      account_group_order: true,
+      sortable_sublist_url_value: reorder_groups_accounts_path(scope: scope),
+      sortable_sublist_param_value: "group_keys",
+      sortable_sublist_hold_delay_value: 400,
+      sortable_sublist_save_timeout_value: 10_000,
+      sortable_sublist_mirror_lists_value: true,
+      action: "dragover->sortable-sublist#dragOver drop->sortable-sublist#drop account-sort-mode:stop@window->sortable-sublist#releaseKeyboardGrab turbo:before-visit@window->sortable-sublist#saveBeforeVisit"
+    } : {}) do %>
+  <% account_groups.each do |group| %>
+    <%= render "accounts/accountable_group",
+          account_group: group,
+          mobile: mobile,
+          all_tab: all_tab,
+          sortable: sortable,
+          reconciliation_indicators: reconciliation_indicators %>
+  <% end %>
+<% end %>

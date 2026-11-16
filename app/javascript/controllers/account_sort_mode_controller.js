@@ -74,7 +74,11 @@ export default class extends Controller {
   // them moves the row.
   renderHandle(handle) {
     handle.style.display = this.sorting ? "" : "none";
-    const item = handle.closest("[data-sortable-list-target='item']");
+    // Group rows use sortable-sublist so they can wrap the account lists,
+    // which stay on sortable-list. Either row is draggable in sort mode.
+    const item = handle.closest(
+      "[data-sortable-list-target='item'], [data-sortable-sublist-target='item']",
+    );
     if (!item) return;
 
     item.draggable = this.sorting;

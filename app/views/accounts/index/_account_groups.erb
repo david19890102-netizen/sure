@@ -13,7 +13,7 @@
        ]
      ).call %>
 <% end %>
-<% accounts.group_by(&:accountable_type).sort_by { |group, _| group }.each do |group, accounts| %>
+<% ordered_accountable_groups(accounts).each do |group, accounts| %>
   <div class="bg-container-inset p-1 rounded-xl">
     <div class="flex items-center px-4 py-2 text-xs font-medium text-secondary">
       <p><%= Accountable.from_type(group).display_name %></p>

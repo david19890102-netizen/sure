@@ -3,7 +3,7 @@ class AccountsController < ApplicationController
   include FilterClearable
 
   before_action :set_account, only: %i[show sparkline sync set_default remove_default clear_filter]
-  before_action :set_manageable_account, only: %i[logo_options toggle_active toggle_exclude_from_reports destroy unlink confirm_unlink select_provider]
+  before_action :set_manageable_account, only: %i[logo_options toggle_active toggle_exclude_from_reports toggle_hidden destroy unlink confirm_unlink select_provider]
   before_action :ensure_linked_account, only: %i[confirm_unlink unlink]
   include Periodable
 
@@ -264,6 +264,16 @@ class AccountsController < ApplicationController
     end
   end
 
+  # Saves a drag of the big account groups (cash, investments, credit cards, …)
+  # for the current user. `scope` is the sidebar tab the drag happened on.
+  def reorder_groups
+    if Current.user.update_account_group_order(params[:group_keys], scope: params[:scope])
+      head :ok
+    else
+      head :unprocessable_entity
+    end
+  end
+
   def toggle_active
     if @account.active?
       @account.disable!
@@ -279,6 +289,14 @@ class AccountsController < ApplicationController
   def toggle_exclude_from_reports
     @account.update!(exclude_from_reports: !@account.exclude_from_reports?)
     redirect_to accounts_path
+  end
+
+  # Toggles the hidden flag for the whole family. A hidden account keeps
+  # syncing and counting in reports; it is only left out of the sidebar and
+  # the account pickers.
+  def toggle_hidden
+    @account.update!(hidden: !@account.hidden?)
+    redirect_back_or_to accounts_path
   end
 
   def set_default

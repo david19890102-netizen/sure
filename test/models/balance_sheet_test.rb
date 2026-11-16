@@ -224,6 +224,36 @@ class BalanceSheetTest < ActiveSupport::TestCase
     assert_equal 3000 + 5000, liability_groups.find { |ag| ag.name == OtherLiability.display_name }.total
   end
 
+  test "account groups stay in the official order until the user saves one" do
+    user = users(:empty)
+    create_account(name: "Brokerage", balance: 0, accountable: Investment.new, owner: user)
+    create_account(name: "Checking", balance: 0, accountable: Depository.new, owner: user)
+    create_account(name: "Card", balance: 0, accountable: CreditCard.new, owner: user)
+
+    balance_sheet = BalanceSheet.new(@family, user: user)
+
+    assert_equal %w[depository investment], balance_sheet.assets.account_groups.map(&:key)
+    assert_equal %w[credit_card], balance_sheet.liabilities.account_groups.map(&:key)
+    assert_equal %w[depository investment credit_card], balance_sheet.account_groups.map(&:key)
+  end
+
+  test "a saved group order is shared by the all, asset, and liability lists" do
+    user = users(:empty)
+    create_account(name: "Brokerage", balance: 0, accountable: Investment.new, owner: user)
+    create_account(name: "Checking", balance: 0, accountable: Depository.new, owner: user)
+    create_account(name: "Card", balance: 0, accountable: CreditCard.new, owner: user)
+    user.update_account_group_order(
+      %w[credit_card investment depository crypto property vehicle other_asset loan other_liability],
+      scope: "all"
+    )
+
+    balance_sheet = BalanceSheet.new(@family, user: user.reload)
+
+    assert_equal %w[investment depository], balance_sheet.assets.account_groups.map(&:key)
+    assert_equal %w[credit_card], balance_sheet.liabilities.account_groups.map(&:key)
+    assert_equal %w[credit_card investment depository], balance_sheet.account_groups.map(&:key)
+  end
+
   test "sorts accounts in the user's manual order, new accounts last alphabetically" do
     user = users(:empty)
     user.update!(default_account_order: "manual")

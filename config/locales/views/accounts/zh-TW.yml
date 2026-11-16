@@ -19,6 +19,9 @@ zh-TW:
       exclude_from_reports: 從所有報表中排除
       include_in_reports: 納入報表
       excluded_from_reports_indicator: 已從報表中排除
+      hide: 隱藏帳戶
+      unhide: 取消隱藏
+      hidden_indicator: 已從側邊欄與選帳戶的地方隱藏
       set_default: 設為預設
       remove_default: 取消預設
       default_label: 預設
@@ -51,6 +54,8 @@ zh-TW:
       notes_label: 備註
       notes_placeholder: 儲存額外資訊，例如帳號、分行代碼、IBAN、銀行轉帳號碼 (Routing numbers) 等。
       exclude_from_reports: 從所有報表中排除
+      hidden_label: 隱藏帳戶
+      hidden_hint: 帳戶仍會計入報表與淨資產，只是不會出現在側邊欄和選帳戶的地方。
       enable_category_matcher_label: 啟用分類比對
       enable_category_matcher_hint: 啟用後，供應商建議的分類會套用到匯入的交易。停用則新交易會維持未分類。
     index:
@@ -123,6 +128,8 @@ zh-TW:
         statements: 對帳單
         exclude_from_reports: 從所有報表中排除
         include_in_reports: 納入報表
+        hide: 隱藏帳戶
+        unhide: 取消隱藏
     update:
       success: '%{type} 帳戶已更新'
     sidebar:
@@ -137,6 +144,18 @@ zh-TW:
       new_debt: 新增負債
       new_account: 新增帳戶
       new_account_group: 新增%{account_group}
+      expand_all: 全部展開
+      collapse_all: 全部收合
+      hidden_accounts:
+        one: "%{count} 個已隱藏的帳戶"
+        other: "%{count} 個已隱藏的帳戶"
+      reorder_account: 移動%{account}
+      reorder_group: 移動%{group}
+      reorder_hint: 拖曳以調整順序。使用鍵盤時，按 Enter 後再按方向鍵。
+      sort_mode:
+        start: 排序帳戶
+        hint: 拖曳群組或帳戶的把手即可調整順序。
+        done: 完成
     types:
       depository: 現金/存款
       investment: 投資

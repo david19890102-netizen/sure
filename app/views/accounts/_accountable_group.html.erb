@@ -1,10 +1,34 @@
 <%# locals: (account_group:, mobile: false, all_tab: false, open: nil, sortable: false, reconciliation_indicators: {}, **args) %>
 
-<div id="<%= account_group.dom_id(tab: all_tab ? :all : nil, mobile: mobile) %>" data-group-key="<%= account_group.key %>">
+<%# Hidden accounts still count in the group total but are not listed. %>
+<% shown_accounts, hidden_accounts = account_group.accounts.partition { |account| !account.hidden? } %>
+<div id="<%= account_group.dom_id(tab: all_tab ? :all : nil, mobile: mobile) %>"
+     data-group-key="<%= account_group.key %>"
+     <% if sortable %>
+     data-sortable-sublist-target="item"
+     data-sortable-list-id="<%= account_group.key %>"
+     data-action="dragstart->sortable-sublist#dragStart dragend->sortable-sublist#dragEnd"
+     <% end %>>
   <% is_open = open.nil? ? (account_group.accounts.any? { |account| page_active?(account_path(account)) } || Current.user.always_expanded_account_group?(account_group.key)) : open %>
   <%= render DS::Disclosure.new(align: :left, open: is_open) do |disclosure| %>
     <% disclosure.with_summary_content do %>
       <div class="flex items-center gap-3">
+        <% if sortable %>
+          <%# Hidden until the sidebar is in sort mode (account-sort-mode). %>
+          <%= render DS::Button.new(
+            variant: :icon,
+            icon: "grip-vertical",
+            size: :sm,
+            style: "display:none",
+            class: "shrink-0 cursor-grab active:cursor-grabbing touch-none [-webkit-touch-callout:none]",
+            aria_label: t("accounts.sidebar.reorder_group", group: account_group.name),
+            title: t("accounts.sidebar.reorder_hint"),
+            data: {
+              account_sort_mode_target: "handle",
+              action: "touchstart->sortable-sublist#touchStart touchmove->sortable-sublist#touchMove touchend->sortable-sublist#touchEnd touchcancel->sortable-sublist#touchCancel contextmenu->sortable-sublist#suppressContextMenu keydown->sortable-sublist#handleKeyDown"
+            }
+          ) %>
+        <% end %>
         <%= icon "chevron-right", class: "group-open:transform group-open:rotate-90" %>
         <%= tag.span class: class_names("text-sm text-primary font-medium", "animate-pulse" => account_group.syncing?) do %>
           <%= account_group.name %>
@@ -34,7 +58,7 @@
             sortable_list_mirror_lists_value: true,
             action: "dragover->sortable-list#dragOver drop->sortable-list#drop account-sort-mode:stop@window->sortable-list#releaseKeyboardGrab turbo:before-visit@window->sortable-list#saveBeforeVisit"
           } : {} do %>
-      <% account_group.accounts.each do |account| %>
+      <% shown_accounts.each do |account| %>
         <%# Rows become draggable only in sort mode (account-sort-mode). %>
         <%= tag.div class: "flex items-center gap-1 rounded-lg",
               data: sortable ? {
@@ -91,6 +115,13 @@
         <% end %>
         <% end %>
       <% end %>
+    <% end %>
+
+    <% if hidden_accounts.any? %>
+      <%= link_to t("accounts.sidebar.hidden_accounts", count: hidden_accounts.size),
+            accounts_path,
+            class: "block px-3 py-1 text-xs text-secondary hover:underline",
+            data: { turbo_frame: "_top" } %>
     <% end %>
 
     <div class="my-2">

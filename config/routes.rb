@@ -743,6 +743,7 @@ Rails.application.routes.draw do
       get :sparkline
       patch :toggle_active
       patch :toggle_exclude_from_reports
+      patch :toggle_hidden
       patch :set_default
       patch :remove_default
       get :select_provider
@@ -755,6 +756,7 @@ Rails.application.routes.draw do
       post :sync_all
       get :logo_options, action: :new_logo_options
       patch :reorder
+      patch :reorder_groups
     end
 
     resource :sharing, only: [ :show, :update ], controller: "account_sharings"

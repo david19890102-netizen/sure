@@ -1587,6 +1587,52 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_not @account.exclude_from_reports?
   end
 
+  test "toggle_hidden toggles the flag without excluding the account from reports" do
+    patch toggle_hidden_account_url(@account)
+    assert_redirected_to accounts_path
+    assert @account.reload.hidden?
+    assert_not @account.exclude_from_reports?
+
+    patch toggle_hidden_account_url(@account)
+    assert_redirected_to accounts_path
+    assert_not @account.reload.hidden?
+  end
+
+  test "toggle_hidden requires write permission" do
+    sign_in users(:family_member)
+
+    patch toggle_hidden_account_url(accounts(:credit_card))
+    assert_redirected_to account_url(accounts(:credit_card))
+    assert_not accounts(:credit_card).reload.hidden?
+  end
+
+  test "sidebar leaves out hidden accounts but the accounts page still lists them" do
+    @account.update!(hidden: true)
+
+    get root_url
+
+    assert_response :success
+    assert_select "#account-sidebar-tabs a[href=?]", account_path(accounts(:credit_card))
+    assert_select "#account-sidebar-tabs a[href=?]", account_path(@account), count: 0
+    assert_select "#account-sidebar-tabs a[href=?]", accounts_path, text: I18n.t("accounts.sidebar.hidden_accounts", count: 1)
+
+    get accounts_url
+
+    assert_response :success
+    assert_select "a[href=?]", account_path(@account), text: @account.name
+  end
+
+  test "a group disappears from the sidebar when every account in it is hidden" do
+    loan = accounts(:loan)
+    loan.update!(hidden: true)
+
+    get root_url
+
+    assert_response :success
+    assert_select "#account-sidebar-tabs [data-group-key=loan]", count: 0
+    assert_select "#account-sidebar-tabs [data-group-key=depository]"
+  end
+
   test "toggle_exclude_from_reports requires write permission" do
     sign_in users(:family_member)
 
@@ -1886,6 +1932,66 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_nil @user.reload.manual_account_order["not_a_type"]
+  end
+
+  test "reorder_groups saves a drag from one tab without moving the other kinds" do
+    patch reorder_groups_accounts_url(scope: "all"), params: {
+      group_keys: %w[credit_card depository investment crypto property vehicle other_asset loan other_liability]
+    }, as: :json
+
+    assert_response :success
+    assert_equal "credit_card", @user.reload.account_group_order.first
+
+    patch reorder_groups_accounts_url(scope: "asset"), params: {
+      group_keys: %w[investment depository crypto property vehicle other_asset]
+    }, as: :json
+
+    assert_response :success
+    order = @user.reload.account_group_order
+    assert_equal "credit_card", order.first
+    assert order.index("investment") < order.index("depository")
+  end
+
+  test "reorder_groups rejects a key from another tab" do
+    patch reorder_groups_accounts_url(scope: "asset"), params: { group_keys: %w[credit_card depository] }, as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal [], @user.reload.account_group_order
+  end
+
+  test "reorder_groups rejects an unknown scope and a non-list" do
+    patch reorder_groups_accounts_url(scope: "transactions"), params: { group_keys: %w[depository] }, as: :json
+    assert_response :unprocessable_entity
+
+    patch reorder_groups_accounts_url(scope: "all"), params: { group_keys: { "0" => "depository" } }, as: :json
+    assert_response :unprocessable_entity
+    assert_equal [], @user.reload.account_group_order
+  end
+
+  test "sidebar renders groups in the saved order" do
+    @user.update_account_group_order(
+      %w[crypto depository investment property vehicle other_asset credit_card loan other_liability],
+      scope: "all"
+    )
+
+    get account_url(@account)
+
+    assert_response :success
+    assert_equal "crypto", css_select("[id^='all_'][data-group-key]").first["data-group-key"]
+    assert_equal "crypto", css_select("[id^='asset_'][data-group-key]").first["data-group-key"]
+    assert_equal %w[credit_card loan other_liability], css_select("[id^='liability_'][data-group-key]").map { |node| node["data-group-key"] }
+  end
+
+  test "sidebar shows group drag handles only with the manual account order" do
+    get account_url(@account)
+    assert_select "[data-sortable-sublist-target='item']", count: 0
+
+    @user.update!(default_account_order: "manual")
+    get account_url(@account)
+
+    assert_select "[data-controller~='sortable-sublist'][data-sortable-sublist-url-value=?]", reorder_groups_accounts_path(scope: "all")
+    assert_select "[data-sortable-sublist-target='item'][data-sortable-list-id=?]", "depository"
+    assert_select "[data-account-sort-mode-target='handle'][aria-label=?]", "Move #{Depository.display_name}"
   end
 
   test "sidebar shows drag handles only with the manual account order" do

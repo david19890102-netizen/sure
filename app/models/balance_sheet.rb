@@ -14,7 +14,8 @@ class BalanceSheet
     @assets ||= ClassificationGroup.new(
       classification: "asset",
       currency: family.currency,
-      accounts: sorted(account_totals.asset_accounts)
+      accounts: sorted(account_totals.asset_accounts),
+      group_order: user&.account_group_order
     )
   end
 
@@ -22,7 +23,8 @@ class BalanceSheet
     @liabilities ||= ClassificationGroup.new(
       classification: "liability",
       currency: family.currency,
-      accounts: sorted(account_totals.liability_accounts)
+      accounts: sorted(account_totals.liability_accounts),
+      group_order: user&.account_group_order
     )
   end
 
@@ -31,7 +33,12 @@ class BalanceSheet
   end
 
   def account_groups
-    [ assets.account_groups, liabilities.account_groups ].flatten
+    groups = [ assets.account_groups, liabilities.account_groups ].flatten
+    return groups if user&.account_group_order.blank?
+
+    # The "All" tab is one list, so a saved order can place a liability group
+    # among the assets. Asset and liability tabs keep the relative order.
+    AccountGroupOrder.sort(groups, user.account_group_order)
   end
 
   def net_worth

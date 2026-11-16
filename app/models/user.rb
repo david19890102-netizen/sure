@@ -677,11 +677,45 @@ class User < ApplicationRecord
     requested_ids = account_ids.map(&:to_s).uniq.first(MANUAL_ACCOUNT_ORDER_LIMIT)
     accessible_ids = accessible_accounts.where(id: requested_ids, accountable_type: group_key.camelize).pluck(:id).to_set
     ordered_ids = requested_ids.select { |id| accessible_ids.include?(id) }
+    # Hidden accounts are not in the sidebar list, so a drag of the visible
+    # rows would otherwise drop them from the saved order.
+    ordered_ids = preserve_hidden_account_order(group_key, ordered_ids)
 
     with_locked_preferences do |prefs|
       prefs["manual_account_order"] = manual_account_order.merge(group_key => ordered_ids)
     end
   end
+
+  # Saves a drag of the big account groups. `scope` is the sidebar tab the
+  # drag happened on; only that tab's types are accepted, and they are merged
+  # into the full order so the other tabs keep their relative positions.
+  def update_account_group_order(group_keys, scope:)
+    merged = nil
+
+    transaction do
+      lock!
+      merged = AccountGroupOrder.merge(account_group_order, group_keys, scope: scope)
+      raise ActiveRecord::Rollback if merged.nil?
+
+      update!(account_group_order: merged)
+    end
+
+    merged.present?
+  end
+
+  # Keeps hidden accounts of this group in the slots they already occupy.
+  def preserve_hidden_account_order(group_key, ordered_ids)
+    preserved = accessible_accounts.where(accountable_type: group_key.camelize, hidden: true).where.not(id: ordered_ids).pluck(:id).map(&:to_s)
+    return ordered_ids if preserved.empty?
+
+    previous = Array(manual_account_order[group_key]).map(&:to_s)
+    base = previous.select { |id| ordered_ids.include?(id) || preserved.include?(id) }
+    (ordered_ids + preserved).each { |id| base << id unless base.include?(id) }
+    incoming = ordered_ids.to_set
+    queue = ordered_ids.dup
+    base.map { |id| incoming.include?(id) ? queue.shift : id }
+  end
+  private :preserve_hidden_account_order
 
   # Locked read-modify-write of the preferences JSONB: yields a copy of the
   # current preferences (re-read under a row lock) to change in place, then
