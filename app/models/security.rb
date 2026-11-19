@@ -86,6 +86,7 @@ class Security < ApplicationRecord
   before_validation :upcase_symbols
   before_save :generate_logo_url_from_brandfetch, if: :should_generate_logo?
   before_save :reset_first_provider_price_on_if_provider_changed
+  after_commit :enqueue_taiwan_name_refresh, on: [ :create, :update ]
 
   has_many :trades, dependent: :nullify, class_name: "Trade"
   has_many :prices, dependent: :destroy
@@ -252,6 +253,19 @@ class Security < ApplicationRecord
     self.class.exchange_name_for(exchange_operating_mic)
   end
 
+  # The name shown in the UI. Provider refreshes write `name` (usually English).
+  # A Traditional Chinese short name, when we have one and the UI is Chinese,
+  # is stored separately so that refresh cannot wipe it.
+  def display_name
+    localized = name_zh_tw.presence if self.class.chinese_locale?
+    localized || name.presence || ticker
+  end
+
+  def self.chinese_locale?
+    locale = I18n.locale.to_s
+    locale == "zh" || locale.start_with?("zh-")
+  end
+
   def current_price
     @current_price ||= find_or_fetch_price
     return nil if @current_price.nil?
@@ -273,7 +287,7 @@ class Security < ApplicationRecord
   def to_combobox_option
     ComboboxOption.new(
       symbol: ticker,
-      name: name,
+      name: display_name,
       logo_url: logo_url,
       exchange_operating_mic: exchange_operating_mic,
       country_code: country_code,
@@ -329,6 +343,20 @@ class Security < ApplicationRecord
       else
         brandfetch_icon_url
       end
+    end
+
+    # New Taiwan listings, and a ticker/venue change, pick up a Chinese short
+    # name without waiting for the daily market-data import. A name that is
+    # already stored is left alone: provider refreshes rewrite `name` only.
+    def enqueue_taiwan_name_refresh
+      return unless Security::TaiwanNames.taiwan?(self)
+      return if name_zh_tw.present? && !saved_change_to_ticker? && !saved_change_to_exchange_operating_mic?
+
+      cache_key = "security_taiwan_name_refresh:#{id}"
+      Rails.cache.delete(cache_key) if saved_change_to_ticker? || saved_change_to_exchange_operating_mic?
+      return unless Rails.cache.write(cache_key, true, expires_in: 6.hours, unless_exist: true)
+
+      Security::RefreshTaiwanNamesJob.perform_later(id)
     end
 
     # When a user remaps a security to a different provider (via the holdings

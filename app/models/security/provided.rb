@@ -292,6 +292,10 @@ module Security::Provided
     # priced by a logo-less provider (e.g. MOEX/ISS) still gets a real logo.
     # Runs after metadata so it never short-circuits website_url backfill.
     import_brand_logo(clear_cache: clear_cache)
+
+    # Chinese short names are not part of the provider payload. Fill them here
+    # so a metadata refresh that rewrites `name` still leaves the UI in Chinese.
+    Security::TaiwanNames.apply!(self) if Security::TaiwanNames.taiwan?(self)
   end
 
   # Enriches the security with a brand logo from a dedicated logo provider

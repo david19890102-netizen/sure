@@ -442,7 +442,7 @@ class InvestmentStatement
 
     HoldingAllocation = Data.define(:security, :amount, :weight, :trend) do
       def ticker = security.ticker
-      def name = security.name.presence || ticker
+      def name = security.display_name
       def amount_money = amount
     end
 
@@ -541,7 +541,7 @@ class InvestmentStatement
       names = {}
       holdings_classified_as(column, bucket, cash_bucket, parent: parent).each do |holding|
         grouped[holding.security_id] += convert_to_family_currency(holding.amount, holding.currency)
-        names[holding.security_id] ||= holding.security.name.presence || holding.security.ticker
+        names[holding.security_id] ||= holding.security.display_name
       end
       build_segments(grouped.map { |id, value| [ id, names[id], value ] } + cash_rows)
     end
@@ -647,7 +647,7 @@ class InvestmentStatement
       :unrealized, :day_change, :missing_cost_basis
     ) do
       def ticker = security.ticker
-      def name = security.name.presence || ticker
+      def name = security.display_name
       def amount_money = amount
     end
 

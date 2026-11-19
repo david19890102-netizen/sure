@@ -35,7 +35,7 @@ class Holding < ApplicationRecord
   after_save :forget_derived_answers
 
   def name
-    security.name || ticker
+    security.display_name
   end
 
   def weight
