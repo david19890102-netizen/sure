@@ -9,6 +9,15 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     @family = @user.family
   end
 
+  test "net worth leads the report sections until an order is saved" do
+    get reports_path
+
+    assert_response :success
+    keys = css_select("[data-section-key]").map { |node| node["data-section-key"] }
+    assert_equal "net_worth", keys.first
+    assert_select "[data-sortable-list-id=net_worth] span.cursor-grab"
+  end
+
   test "renders sections in the order and collapse state stored under the reports keys" do
     @user.update_columns(preferences: (@user.preferences || {}).merge(
       "reports_section_order" => %w[transactions_breakdown trends_insights],
