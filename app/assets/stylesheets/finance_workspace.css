@@ -1,0 +1,41 @@
+/* Palette scoped to the signed-in workspace. The existing theme toggle
+   continues to select the same light and dark surfaces. */
+.finance-workspace {
+  --color-surface: #f8fafc;
+  --color-container-inset: #f1f5f7;
+  --color-link: #146d63;
+  --finance-ink: #192c41;
+  --finance-rail: #1a293b;
+  --finance-accent: #197568;
+  font-family: Inter, "Noto Sans TC", "PingFang TC", var(--font-sans);
+  color: var(--finance-ink);
+}
+[data-theme="dark"] .finance-workspace {
+  --color-surface: #121c28;
+  --color-container: #1c2938;
+  --color-container-inset: #243241;
+  --color-link: #86d4c2;
+  --finance-ink: #e4edf4;
+  --finance-rail: #101a27;
+  --finance-accent: #78d1bd;
+}
+.finance-rail { background: var(--finance-rail); color: #e4edf4; }
+.finance-rail :is(li,button) { --color-container: #304854; --color-surface-hover: #304854; --color-nav-indicator: #84c6b5; }
+.finance-rail :is(li a,button) :is(p,svg), .finance-rail button { color: #d6e3ec; }
+.finance-rail li a[aria-current="page"] { background: #304854; border-radius: .65rem; }
+.finance-rail li a:focus-visible, .finance-rail button:focus-visible { outline: 2px solid #84c6b5; }
+.finance-net-worth,.finance-bill-grid { container-type: inline-size; display: grid; gap: 1rem; }
+.finance-composition { display: flex; flex-wrap: wrap; gap: 1rem 2rem; margin: 0 1rem; padding: 1rem; border-radius: .875rem; background: var(--color-container-inset); }
+.finance-net-worth .start-color { stop-color: var(--finance-accent); }
+[data-section-key="net_worth_chart"], [data-section-key="bill_activity"] { border-radius: 1rem; container-type: inline-size; }
+@container (min-width: 40rem) {
+  .finance-net-worth { grid-template-columns: minmax(0,2fr) minmax(0,1fr); align-items: stretch; }
+  .finance-composition { flex-direction: column; justify-content: center; margin-left: 0; }
+  .finance-bill-grid { grid-template-columns: 1.25fr 1fr; }
+}
+@media (min-width: 80rem) {
+  .finance-rail { width: 10rem; padding-inline: .5rem; }
+  .finance-rail li a { display: flex; align-items: center; gap: .5rem; padding-block: .4rem; }
+  .finance-rail li a > div { flex-grow: 0; padding-left: 0; }
+  .finance-rail li a p { font-size: .875rem; }
+}

@@ -38,6 +38,17 @@ en:
       heading: Terms of Service
       placeholder: Terms of service content will be displayed here.
     dashboard:
+      current_net_worth: Current balance
+      financial_overview: Financial overview
+      bill_activity:
+        title: "Bills to review"
+        upcoming: "Upcoming · next 30 days"
+        matches: "Payment matches"
+        empty: "No bills coming due."
+        none: "No pending matches."
+        calendar: "View calendar"
+        bills: "View bills"
+        pending: "%{count} pending payment matches"
       welcome: "Welcome back, %{name}"
       subtitle: "Here's what's happening with your finances"
       new: "New"

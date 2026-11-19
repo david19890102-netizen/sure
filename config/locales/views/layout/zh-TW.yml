@@ -8,6 +8,11 @@ zh-TW:
       resize_right_sidebar: 調整助手側邊欄寬度
       skip_to_main: 跳至主要內容
       nav:
+        reorder: 調整順序
+        reset: 恢復預設
+        move_up: 上移%{name}
+        move_down: 下移%{name}
+        storage_error: 此瀏覽器無法儲存排序。
         assistant: 助手
         bills: 帳單
         budgets: 預算

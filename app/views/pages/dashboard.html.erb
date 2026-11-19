@@ -2,11 +2,10 @@
   <div class="space-y-1 mb-6 flex gap-4 justify-between items-center lg:items-start">
     <div class="space-y-1">
       <h1 class="text-xl lg:text-3xl font-medium text-primary">
-        <%= t("pages.dashboard.welcome", name: Current.user.first_name) %>
+        <%= t("pages.dashboard.financial_overview") %>
+        <span class="block mt-1 text-sm font-normal text-secondary"><%= t("pages.dashboard.welcome", name: Current.user.first_name) %></span>
       </h1>
-      <p class="text-sm lg:text-base text-secondary">
-        <%= t("pages.dashboard.subtitle") %>
-      </p>
+
     </div>
 
     <div class="flex items-center gap-2">

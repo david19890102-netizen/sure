@@ -20,6 +20,7 @@ class PagesController < ApplicationController
     "cashflow_donut"     => { col_span: "single", grow: false, min_height: 0 },
     "investment_summary" => { col_span: "single", grow: false, min_height: 0, width_toggle: true },
     "net_worth_chart"    => { col_span: "single", grow: true,  min_height: 208, width_toggle: true },
+    "bill_activity"      => { col_span: "full", grow: false, min_height: 0 },
     "balance_sheet"      => { col_span: "single", grow: false, min_height: 0, width_toggle: true }
   }.freeze
 
@@ -171,6 +172,7 @@ class PagesController < ApplicationController
     # called and its queries never run.
     def dashboard_section_builders
       {
+        "bill_activity" => -> { bill_activity_section },
         "insights_feed" => -> { insights_feed_section },
         "cashflow_sankey" => -> {
           {
@@ -293,12 +295,34 @@ class PagesController < ApplicationController
       return nil if key == "insights_feed" && !preview_features_enabled?
 
       visible = case key
+      when "bill_activity" then bill_activity_available?
       when "investment_summary" then investment_summary_available?
       when "insights_feed" then Current.family.insights.visible.exists?
       else @accounts.any?
       end
 
       { key: key, title: "pages.dashboard.#{key}.title", visible: visible }
+    end
+
+    def bill_activity_available?
+      preview_features_enabled? && !Current.family.recurring_transactions_disabled? && @accounts.any?
+    end
+
+    def bill_activity_section
+      return unless bill_activity_available?
+
+      series = Current.family.recurring_transactions.accessible_by(Current.user).payable.select(:id)
+      open_bills = Current.family.recurring_occurrences.open_status.where(recurring_transaction_id: series)
+      due = RecurringOccurrence::EFFECTIVE_DUE_ON_SQL
+      upcoming = open_bills.where("#{due} BETWEEN ? AND ?", Date.current, Date.current + 30)
+                           .order(Arel.sql(due), :id).limit(3).includes(recurring_transaction: :merchant)
+      suggestions = RecurringAllocation.suggested.where(recurring_occurrence_id: open_bills.select(:id))
+                                        .where(entry_id: Current.family.entries.where(account_id: @accounts.select(:id)).select(:id))
+      {
+        key: "bill_activity", title: "pages.dashboard.bill_activity.title",
+        partial: "pages/dashboard/bill_activity", layout: section_layout("bill_activity"),
+        locals: { upcoming: upcoming, review_count: suggestions.count }, visible: true, collapsible: true
+      }
     end
 
     def investment_summary_available?

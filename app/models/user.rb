@@ -1027,7 +1027,7 @@ class User < ApplicationRecord
     end
 
     def default_dashboard_section_order
-      %w[insights_feed cashflow_sankey outflows_donut net_worth_chart balance_sheet]
+      %w[net_worth_chart bill_activity insights_feed cashflow_sankey outflows_donut balance_sheet]
     end
 
     def section_namespace!(namespace)
