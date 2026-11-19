@@ -17,6 +17,10 @@ class MarketDataImporter
 
   # Syncs historical security prices (and details)
   def import_security_prices
+    # Independent of the price provider: Chinese short names come from the
+    # exchange open data, including when no securities provider is configured.
+    Security::RefreshTaiwanNamesJob.perform_later
+
     unless Security.providers.any?
       Rails.logger.warn("No provider configured for MarketDataImporter.import_security_prices, skipping sync")
       return

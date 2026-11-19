@@ -688,7 +688,7 @@ class Family < ApplicationRecord
       restriction = restrictions[security.id]
       {
         ticker: security.ticker,
-        name: security.name,
+        name: security.display_name,
         required_plan: restriction[:required_plan],
         provider: restriction[:provider]
       }
