@@ -33,7 +33,7 @@
   .finance-composition { flex-direction: column; justify-content: center; margin-left: 0; }
   .finance-bill-grid { grid-template-columns: 1.25fr 1fr; }
 }
-@media (min-width: 80rem) {
+@media (min-width: 96rem) {
   .finance-rail { width: 10rem; padding-inline: .5rem; }
   .finance-rail li a { display: flex; align-items: center; gap: .5rem; padding-block: .4rem; }
   .finance-rail li a > div { flex-grow: 0; padding-left: 0; }
