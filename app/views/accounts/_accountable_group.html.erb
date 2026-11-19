@@ -113,6 +113,9 @@
             <% end %>
           </div>
         <% end %>
+        <% if account_manageable?(account) %>
+          <%= render "accounts/favorite_toggle", account: account %>
+        <% end %>
         <% end %>
       <% end %>
     <% end %>

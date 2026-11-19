@@ -1,0 +1,22 @@
+<%# locals: (accounts:, compact: false, mobile: false) %>
+<% if accounts.any? %>
+  <%# Desktop sidebar, mobile sidebar, and the accounts page all render this, so the id cannot be shared. %>
+  <% section_id = compact ? (mobile ? "favorite-accounts-mobile" : "favorite-accounts") : "favorite-accounts-page" %>
+  <div id="<%= section_id %>" class="<%= compact ? "mb-3 space-y-1" : "bg-container p-4 shadow-border-xs rounded-xl space-y-1" %>">
+    <p class="<%= compact ? "px-3 text-xs" : "text-sm mb-2" %> font-medium text-secondary"><%= t("accounts.sidebar.favorites") %></p>
+    <% accounts.each do |account| %>
+      <div class="flex items-center gap-1">
+        <%= link_to account_path(account),
+              class: "flex items-center gap-2 min-w-0 grow px-3 py-2 rounded-lg hover:bg-surface-hover",
+              data: { turbo_frame: "_top" } do %>
+          <%= render "accounts/logo", account: account, size: "sm" %>
+          <p class="text-sm font-medium text-primary truncate"><%= account.name %></p>
+          <p class="ml-auto text-sm font-medium text-primary whitespace-nowrap privacy-sensitive"><%= format_money(account.balance_money) %></p>
+        <% end %>
+        <% if account_manageable?(account) %>
+          <%= render "accounts/favorite_toggle", account: account %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

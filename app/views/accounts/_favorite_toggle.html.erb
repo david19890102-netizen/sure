@@ -1,0 +1,10 @@
+<%# locals: (account:) %>
+<% favorited = account.favorite? %>
+<% label = t(favorited ? "accounts.favorite.remove" : "accounts.favorite.add", name: account.name) %>
+<%= link_to toggle_favorite_account_path(account),
+      class: "inline-flex items-center justify-center w-7 h-7 shrink-0 rounded-md hover:bg-container-inset-hover",
+      title: label,
+      aria: { label: label, pressed: favorited },
+      data: { turbo_method: :patch } do %>
+  <%= icon("star", size: "sm", color: favorited ? "warning" : "default") %>
+<% end %>

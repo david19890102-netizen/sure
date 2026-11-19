@@ -22,6 +22,8 @@ zh-TW:
       hide: 隱藏帳戶
       unhide: 取消隱藏
       hidden_indicator: 已從側邊欄與選帳戶的地方隱藏
+      favorite: 加入常用
+      unfavorite: 取消常用
       set_default: 設為預設
       remove_default: 取消預設
       default_label: 預設
@@ -130,8 +132,13 @@ zh-TW:
         include_in_reports: 納入報表
         hide: 隱藏帳戶
         unhide: 取消隱藏
+        favorite: 加入常用
+        unfavorite: 取消常用
     update:
       success: '%{type} 帳戶已更新'
+    favorite:
+      add: 將%{name}加入常用
+      remove: 將%{name}從常用移除
     sidebar:
       missing_data: 缺少歷史資料
       missing_data_description: '%{product} 會向第三方供應商取得歷史匯率、證券價格等資料。要算出正確的歷史餘額就需要這些資料。'
@@ -146,6 +153,7 @@ zh-TW:
       new_account_group: 新增%{account_group}
       expand_all: 全部展開
       collapse_all: 全部收合
+      favorites: 常用帳戶
       hidden_accounts:
         one: "%{count} 個已隱藏的帳戶"
         other: "%{count} 個已隱藏的帳戶"
