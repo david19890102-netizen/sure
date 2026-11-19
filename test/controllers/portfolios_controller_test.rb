@@ -181,12 +181,16 @@ class PortfoliosControllerTest < ActionDispatch::IntegrationTest
                   update_preferences_portfolio_path, "portfolio"
   end
 
-  test "the nav shows Portfolio on desktop only, and never without the preview flag" do
+  test "the phone bar includes Portfolio while preview features are on" do
     get portfolio_path
 
     assert_response :success
     assert_select "ul li a[href=?]", portfolio_path, minimum: 1
-    assert_select "nav[data-viewport-target=bottomNav] a[href=?]", portfolio_path, count: 0
+    assert_select "nav[data-viewport-target=bottomNav] a[href=?]", portfolio_path, minimum: 1
+
+    @user.update!(locale: "zh-TW")
+    get portfolio_path
+    assert_select "nav[data-viewport-target=bottomNav] a[href=?]", portfolio_path, text: "投資組合"
 
     disable_preview(@user)
     get root_path
@@ -195,10 +199,7 @@ class PortfoliosControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", portfolio_path, count: 0
   end
 
-  # Portfolio is the only desktop-only entry, so every other item still
-  # reaches both bars: the mobile bar is the desktop rail without Portfolio,
-  # plus the mobile-only Assistant.
-  test "every other nav item still renders in both bars" do
+  test "the phone bar keeps every desktop entry, plus the mobile-only Assistant" do
     get root_path
     assert_response :success
 
@@ -206,7 +207,8 @@ class PortfoliosControllerTest < ActionDispatch::IntegrationTest
     mobile = css_select("nav[data-viewport-target=bottomNav] a").map { |link| link["href"] }
 
     assert_includes desktop, portfolio_path
-    assert_equal desktop - [ portfolio_path ], mobile - [ chats_path ]
+    assert_includes mobile, portfolio_path
+    assert_equal desktop.sort, (mobile - [ chats_path ]).sort
     assert_includes mobile, chats_path if @family.assistant_enabled?
   end
 
