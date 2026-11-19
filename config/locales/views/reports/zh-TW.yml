@@ -6,6 +6,8 @@ zh-TW:
       subtitle: 深入洞察您的財務健康狀況
       export: 匯出 CSV
       print_report: 列印報表
+      section_aria: '%{title} 區塊。按 Enter 或空白鍵抓取後，再用方向鍵移動。'
+      sections_aria: 報表區塊
       periods:
         monthly: 按月
         quarterly: 按季

@@ -851,7 +851,12 @@ class User < ApplicationRecord
   # default order; the portfolio's is read from its registry so the two
   # lists cannot drift.
   SECTION_DEFAULT_ORDERS = {
-    "reports" => %w[trends_insights transactions_breakdown].freeze,
+    # Net worth leads. A saved order still wins; sections missing from an older
+    # saved list are appended by ReportsController.
+    "reports" => %w[
+      net_worth trends_insights spending_vs_normal investment_performance
+      investment_flows transactions_breakdown
+    ].freeze,
     "portfolio" => Portfolio::SectionRegistry::KEYS
   }.freeze
 
