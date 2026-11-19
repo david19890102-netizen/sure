@@ -130,6 +130,15 @@ en:
           other: Showing %{count} entries
         previous: Previous
         next: Next
+    net_worth_change:
+      title: Net worth change
+      hint: Change since the start of this period
+      mode_aria: Net worth change display
+      no_baseline: This period opens at zero, so a percentage is not meaningful. Switch to amount to see the balance.
+      no_data: Not enough history in this period to draw a change curve.
+      modes:
+        percent: Percent
+        amount: Amount
     net_worth:
       title: Net Worth
       current_net_worth: Current Net Worth

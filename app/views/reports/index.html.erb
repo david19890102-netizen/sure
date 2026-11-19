@@ -67,7 +67,7 @@
 
     <%# Period Display %>
     <% if @nav %>
-      <div class="flex items-center gap-1 mb-4">
+      <div class="flex flex-wrap items-center gap-1 mb-4">
         <div class="flex items-center gap-2">
           <%= render DS::Tooltip.new(text: t("reports.index.shortcut_hint", action: t("reports.index.previous_period"), key: "←")) do |tooltip| %>
             <% tooltip.with_trigger do %>

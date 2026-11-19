@@ -851,8 +851,8 @@ class User < ApplicationRecord
   # default order; the portfolio's is read from its registry so the two
   # lists cannot drift.
   SECTION_DEFAULT_ORDERS = {
-    # Net worth leads. A saved order still wins; sections missing from an older
-    # saved list are appended by ReportsController.
+    # Net worth leads this list. The change curve is not stored here: until a
+    # saved order names it, ReportsController places that section first.
     "reports" => %w[
       net_worth trends_insights spending_vs_normal investment_performance
       investment_flows transactions_breakdown
@@ -909,12 +909,23 @@ class User < ApplicationRecord
     section_order("reports")
   end
 
+  def reports_net_worth_change_mode
+    mode = preferences&.[]("reports_net_worth_change_mode").to_s
+    Reports::NetWorthChangeSeries::MODES.include?(mode) ? mode : "percent"
+  end
+
   def update_reports_preferences(prefs)
-    update_section_preferences(
+    saved = update_section_preferences(
       "reports",
       order: prefs["reports_section_order"],
       collapsed: prefs["reports_collapsed_sections"]
     )
+    mode = prefs["reports_net_worth_change_mode"].to_s
+    return saved unless Reports::NetWorthChangeSeries::MODES.include?(mode)
+
+    with_locked_preferences do |updated|
+      updated["reports_net_worth_change_mode"] = mode
+    end
   end
 
   # Transactions preferences management
