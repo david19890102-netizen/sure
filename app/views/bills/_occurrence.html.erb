@@ -61,7 +61,7 @@
         used to be printed twice: a coloured subline on the left and a figure
         on the right. %>
     <div class="shrink-0 text-right min-w-0">
-      <p class="text-sm font-medium <%= lead_tone %> privacy-sensitive whitespace-nowrap">
+      <p class="text-sm font-medium tabular-nums <%= lead_tone %> privacy-sensitive whitespace-nowrap">
         <% if occurrence.paid? %>
           <%= format_money(paid) %>
         <% elsif occurrence.partially_paid? %>

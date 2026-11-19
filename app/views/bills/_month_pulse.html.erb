@@ -15,7 +15,7 @@
      overdue: @past_due_total&.amount
    ) %>
 
-<div class="bg-container rounded-xl shadow-border-xs p-4 space-y-4">
+<%= render DS::Card.new(class: "@container/bills-summary gap-4 sm:p-6") do %>
   <div class="flex items-baseline justify-between gap-3">
     <p class="text-xs font-medium uppercase text-secondary"><%= l(Date.current, format: "%B") %></p>
     <p class="text-xs text-secondary"><%= t(".bill_count", count: @month_bill_count) %></p>
@@ -23,27 +23,27 @@
 
   <%# The one figure the page exists to state. %>
   <div>
-    <p class="text-3xl font-medium text-primary privacy-sensitive leading-tight">
+    <p class="text-3xl sm:text-4xl font-medium tabular-nums break-words text-primary privacy-sensitive leading-tight">
       <%= @remaining_this_month ? format_money(@remaining_this_month) : "–" %>
     </p>
     <p class="text-sm text-secondary"><%= t(".left_to_pay") %></p>
   </div>
 
-  <%# Supporting, not competing: one line of three, each a figure and a word. %>
-  <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+  <%# Supporting figures stack on a phone and share a line when there is room. %>
+  <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 text-sm">
     <p>
-      <span class="font-medium text-primary privacy-sensitive"><%= format_money(@paid_this_month_total || Money.new(0, Current.family.currency)) %></span>
+      <span class="font-medium tabular-nums text-primary privacy-sensitive"><%= format_money(@paid_this_month_total || Money.new(0, Current.family.currency)) %></span>
       <span class="text-secondary"><%= t(".pulse_paid") %></span>
     </p>
     <% if @past_due_total && @past_due_total.amount.positive? %>
       <p class="text-destructive">
-        <span class="font-medium privacy-sensitive"><%= format_money(@past_due_total) %></span>
+        <span class="font-medium tabular-nums privacy-sensitive"><%= format_money(@past_due_total) %></span>
         <%= t(".pulse_overdue") %>
       </p>
     <% end %>
     <% if @due_next_seven && @due_next_seven.amount.positive? %>
       <p>
-        <span class="font-medium text-primary privacy-sensitive"><%= format_money(@due_next_seven) %></span>
+        <span class="font-medium tabular-nums text-primary privacy-sensitive"><%= format_money(@due_next_seven) %></span>
         <span class="text-secondary"><%= t(".pulse_next_seven") %></span>
         <span class="text-secondary"><%= t(".pulse_until", date: format_date(@next_seven_until), default: "until %{date}") %></span>
       </p>
@@ -88,13 +88,13 @@
 
       <%# A horizontal strip where there is room, a scrollable one where there
           is not. Four columns at 375px would be four unreadable slivers. %>
-      <div class="flex gap-2 overflow-x-auto no-scrollbar sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4">
+      <nav aria-label="<%= t(".next_up") %>" class="flex gap-2 overflow-x-auto no-scrollbar @sm/bills-summary:grid @sm/bills-summary:grid-cols-2 @sm/bills-summary:overflow-visible @2xl/bills-summary:grid-cols-4">
         <% @next_up.each do |occurrence| %>
           <% series = occurrence.recurring_transaction %>
           <%# Inset ring: on phones the scroll strip clips an outline drawn outside the item. %>
           <%= link_to bill_path(series, display: "drawer", occurrence: occurrence.id),
                 data: { turbo_frame: "drawer", turbo_prefetch: false },
-                class: "shrink-0 w-36 sm:w-auto rounded-lg px-2 py-1.5 hover:bg-surface-hover focus-ring -outline-offset-2" do %>
+                class: "shrink-0 w-40 @sm/bills-summary:w-auto min-h-24 rounded-lg bg-surface-inset px-3 py-3 hover:bg-surface-hover focus-ring -outline-offset-2" do %>
             <p class="text-xs text-secondary truncate">
               <%= bills_next_up_date(occurrence) %>
               <% if series.autopay? %>
@@ -102,7 +102,7 @@
               <% end %>
             </p>
             <p class="text-sm text-primary truncate"><%= series.display_name %></p>
-            <p class="text-sm font-medium text-primary privacy-sensitive">
+            <p class="text-sm font-medium tabular-nums text-primary privacy-sensitive">
               <% if occurrence.partially_paid? %>
                 <%= format_money(occurrence.remaining_amount_money) %>
                 <span class="text-xs font-normal text-secondary"><%= t("bills.remaining_label") %></span>
@@ -112,7 +112,7 @@
             </p>
           <% end %>
         <% end %>
-      </div>
+      </nav>
     </div>
   <% end %>
-</div>
+<% end %>

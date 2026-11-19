@@ -1,7 +1,35 @@
 ---
 zh-TW:
+  recurring_transactions:
+    allocator:
+      missing_rate: "缺少 %{from} 轉換為 %{to} 的匯率，請直接輸入金額"
+      unmeasurable: "這筆交易已有無法換算為 %{currency} 的付款配對，因此無法計算可用餘額。請補上 %{date} 的匯率，或先移除既有付款配對"
+      over_allocated: "配對金額 %{amount} 超過交易尚可使用的 %{capacity} %{currency}"
+      entry_exhausted: 這筆交易的金額已全數配對至其他應付款項
+      already_allocated: 這筆交易已配對至此帳單
+      exceeds_remaining: "%{amount} 超過本期尚待支付的 %{remaining}"
   activerecord:
+    attributes:
+      recurring_transaction:
+        payment_url: 付款連結
+        frequency_interval: 重複間隔
     errors:
       models:
         recurring_transaction:
           merchant_or_name_required: 商家與名稱至少須提供一項
+          attributes:
+            payment_url:
+              invalid_scheme: 必須是有效的 http:// 或 https:// 網址
+            anchor_date:
+              required_for_intervals: 重複間隔為 2 個週期以上時，必須設定起始日期
+            bill_type:
+              transfer_shape_mismatch: 設定轉入帳戶後才能選擇轉帳類型
+            expected_amount_min:
+              greater_than_max: 不能高於預計金額上限
+            account:
+              required_for_transfer: 定期轉帳必須設定帳戶
+              wrong_family: 必須屬於這個家庭
+            destination_account:
+              same_as_source: 不能與轉出帳戶相同
+              family_mismatch: 必須與轉出帳戶屬於同一家庭
+              wrong_family: 必須屬於這個家庭

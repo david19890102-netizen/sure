@@ -1,0 +1,16 @@
+---
+zh-TW:
+  recurring_allocations:
+    over_allocation: 配對金額不能超過交易金額
+    missing_rate: 缺少匯率，請直接輸入金額
+    already_allocated: 這筆交易已配對至此帳單
+    entry_exhausted: 這筆交易的金額已全數配對至其他應付款項
+    invalid: 無法登錄這筆付款
+    create:
+      success: 付款已套用
+    destroy:
+      success: 已解除付款連結
+    confirm:
+      success: 付款已配對至帳單
+    reject:
+      success: 已忽略，之後不會再建議將這筆交易配對至此帳單。
