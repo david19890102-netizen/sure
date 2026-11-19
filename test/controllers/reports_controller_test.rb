@@ -9,6 +9,24 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     @family = @user.family
   end
 
+  test "the net worth change curve is the first section and the display mode is remembered" do
+    get reports_path
+
+    assert_response :success
+    keys = css_select("[data-section-key]").map { |node| node["data-section-key"] }
+    assert_equal "net_worth_change", keys.first
+    assert_select "#reportsNetWorthChangeChart, #reports-net-worth-change-empty"
+
+    get reports_path(net_worth_change: "amount")
+
+    assert_equal "amount", @user.reload.reports_net_worth_change_mode
+    assert_select "a[href*='net_worth_change=amount']"
+
+    get reports_path
+
+    assert_equal "amount", @user.reload.reports_net_worth_change_mode
+  end
+
   test "renders sections in the order and collapse state stored under the reports keys" do
     @user.update_columns(preferences: (@user.preferences || {}).merge(
       "reports_section_order" => %w[transactions_breakdown trends_insights],
@@ -19,7 +37,7 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     keys = css_select("[data-section-key]").map { |node| node["data-section-key"] }
-    assert_equal %w[transactions_breakdown trends_insights], keys.first(2)
+    assert_equal %w[net_worth_change transactions_breakdown trends_insights], keys.first(3)
     assert_select "[data-section-key=trends_insights][data-reports-section-collapsed-value=?]", "true"
     assert_select "[data-section-key=transactions_breakdown][data-reports-section-collapsed-value=?]", "false"
     assert_select "[data-section-key=trends_insights] > details:not([open])"

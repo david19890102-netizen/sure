@@ -1,4 +1,19 @@
 module ReportsHelper
+  # New Taiwan dollars are quoted in whole dollars. Reports drop the cents so
+  # a net-worth figure is not padded with ".00". Other currencies keep their
+  # own precision. An explicit precision still wins.
+  def reports_money(number_or_money, **options)
+    return if number_or_money.nil?
+
+    money = number_or_money.is_a?(Money) ? number_or_money : Money.new(number_or_money, Current.family&.currency)
+    options[:precision] = 0 if money.currency.iso_code == "TWD" && !options.key?(:precision)
+    money.format(options)
+  end
+
+  def format_money(number_or_money, options = {})
+    reports_money(number_or_money, **options.to_h.symbolize_keys)
+  end
+
   # Where a breakdown row links: its category's transactions in the period.
   # /transactions only lists Transaction rows, so trade-only rows (e.g. Other
   # Investments) link nowhere rather than to an empty list.

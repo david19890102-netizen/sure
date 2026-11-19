@@ -11,7 +11,7 @@
   <div class="text-large mb-4 flex items-center gap-2 text-lg">
     <%= icon(icon_name, class: "w-5 h-5") %>
     <span><%= t(title_key) %>:</span>
-    <span class="font-medium text-secondary <%= color_class %> privacy-sensitive"> <%= Money.new(total, Current.family.currency).format %></span>
+    <span class="font-medium text-secondary <%= color_class %> privacy-sensitive"> <%= reports_money(Money.new(total, Current.family.currency)) %></span>
   </div>
 
   <%
@@ -36,7 +36,7 @@
       <%= render "reports/category_name", item: item %>
     <% end %>
     <% table.with_column(amount_header, numeric: true) do |item| %>
-      <%= link_to_if item[:href], tag.span(Money.new(item[:total], Current.family.currency).format, class: "#{color_class} privacy-sensitive"), item[:href], link_options %>
+      <%= link_to_if item[:href], tag.span(reports_money(Money.new(item[:total], Current.family.currency)), class: "#{color_class} privacy-sensitive"), item[:href], link_options %>
     <% end %>
     <% table.with_column(t("reports.transactions_breakdown.table.percentage"), numeric: true) do |item| %>
       <%= link_to_if item[:href], "#{total.zero? ? 0 : (item[:total].to_f / total * 100).round(1)}%", item[:href], link_options %>

@@ -7,6 +7,7 @@ class ReportsController < ApplicationController
   before_action :authenticate_for_export, only: :export_transactions
 
   def index
+    remember_net_worth_change_mode
     setup_report_data(show_flash: true)
 
     # Build reports sections for collapsible/reorderable UI
@@ -150,17 +151,40 @@ class ReportsController < ApplicationController
     end
 
     def preferences_params
-      # Only the two reports keys are passed on; User#update_section_preferences
-      # drops any value that is not an array of keys or a hash of flags.
+      # Only the reports keys are passed on. Section order and collapse are
+      # dropped unless they have the shape the readers expect. The change-curve
+      # mode is a separate preference.
       prefs = params.require(:preferences)
       {
         "reports_collapsed_sections" => prefs[:reports_collapsed_sections],
-        "reports_section_order" => prefs[:reports_section_order]
+        "reports_section_order" => prefs[:reports_section_order],
+        "reports_net_worth_change_mode" => prefs[:reports_net_worth_change_mode]
       }
     end
 
+    def remember_net_worth_change_mode
+      mode = params[:net_worth_change].to_s
+      return unless Reports::NetWorthChangeSeries::MODES.include?(mode)
+      return if Current.user.reports_net_worth_change_mode == mode
+
+      Current.user.update_reports_preferences({ "reports_net_worth_change_mode" => mode })
+    end
+
     def build_reports_sections
+      change = Reports::NetWorthChangeSeries.new(
+        @net_worth_metrics[:series],
+        mode: Current.user.reports_net_worth_change_mode,
+        currency: Current.family.currency
+      )
       all_sections = [
+        {
+          key: "net_worth_change",
+          title: "reports.net_worth_change.title",
+          partial: "reports/net_worth_change",
+          locals: { change: change },
+          visible: accessible_accounts.any?,
+          collapsible: true
+        },
         {
           key: "net_worth",
           title: "reports.net_worth.title",
@@ -226,6 +250,15 @@ class ReportsController < ApplicationController
       # Add any new sections that aren't in the saved order (future-proofing)
       all_sections.each do |section|
         ordered_sections << section unless ordered_sections.include?(section)
+      end
+
+      # The change curve stays at the top until a saved order names it.
+      # Dragging the sections writes that order, so a later visit keeps the spot.
+      stored = Current.user.preferences&.[]("reports_section_order")
+      placed = stored.is_a?(Array) && stored.map(&:to_s).include?("net_worth_change")
+      unless placed
+        chart, rest = ordered_sections.partition { |section| section[:key] == "net_worth_change" }
+        ordered_sections = chart + rest
       end
 
       ordered_sections
@@ -758,6 +791,7 @@ class ReportsController < ApplicationController
         total_assets: Money.new(total_assets, currency),
         total_liabilities: Money.new(total_liabilities, currency),
         trend: trend,
+        series: net_worth_series,
         asset_groups: asset_groups,
         liability_groups: liability_groups,
         breakdown_series: breakdown_series
