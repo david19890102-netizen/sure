@@ -63,6 +63,7 @@ en:
         tall: "Tall"
       net_worth_chart:
         data_not_available: Data not available for the selected period
+        no_baseline: No starting balance for this period
         title: Net Worth
       no_account_empty_state:
         new_account: New account

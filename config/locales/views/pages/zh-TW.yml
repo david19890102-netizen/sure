@@ -59,6 +59,7 @@ zh-TW:
         tall: 加高
       net_worth_chart:
         data_not_available: 所選時段內無資料
+        no_baseline: 此區間沒有起始淨值，無法比較
         title: 淨資產
       no_account_empty_state:
         new_account: 新增帳戶

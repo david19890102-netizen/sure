@@ -23,6 +23,19 @@ class PeriodTest < ActiveSupport::TestCase
     assert_equal "Custom Period", period.label
   end
 
+  test "one day and one week are available periods" do
+    assert_includes Period::PERIODS.keys, "last_day"
+    assert_includes Period::PERIODS.keys, "last_7_days"
+    assert_equal [ "last_day", "last_7_days" ], Period.as_options.map(&:last) & [ "last_day", "last_7_days" ]
+
+    day = Period.last_day
+    week = Period.last_7_days
+    assert_equal Date.current, day.end_date
+    assert_equal Date.current, week.end_date
+    assert_equal 1, (day.end_date - day.start_date).to_i
+    assert_equal 7, (week.end_date - week.start_date).to_i
+  end
+
   test "from_key returns period for valid key" do
     period = Period.from_key("last_30_days")
     assert_equal 30.days.ago.to_date, period.start_date
