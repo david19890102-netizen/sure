@@ -1598,6 +1598,52 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_not @account.reload.hidden?
   end
 
+  test "toggle_favorite marks the account and lists it above the groups" do
+    assert_not @account.favorite?
+
+    patch toggle_favorite_account_url(@account)
+    assert_redirected_to accounts_path
+    assert @account.reload.favorite?
+    assert_not @account.hidden?
+
+    get root_url
+    assert_response :success
+    assert_select "#favorite-accounts a[href=?]", account_path(@account), text: /#{Regexp.escape(@account.name)}/
+    assert_select "#favorite-accounts .privacy-sensitive"
+    assert_select "[data-group-key=depository] a[href=?]", account_path(@account)
+    assert_select "a[href=?][data-turbo-method=patch]", toggle_favorite_account_path(@account)
+
+    get accounts_url
+    assert_response :success
+    assert_select "#favorite-accounts-page a[href=?]", account_path(@account), text: /#{Regexp.escape(@account.name)}/
+
+    patch toggle_favorite_account_url(@account)
+    assert_not @account.reload.favorite?
+
+    get root_url
+    assert_select "#favorite-accounts", count: 0
+  end
+
+  test "a hidden favorite stays out of the quick view" do
+    @account.update!(favorite: true, hidden: true)
+
+    get root_url
+    assert_select "#favorite-accounts", count: 0
+    assert_select "#account-sidebar-tabs a[href=?]", account_path(@account), count: 0
+
+    get accounts_url
+    assert_select "#favorite-accounts-page", count: 0
+    assert_select "a[href=?]", account_path(@account), text: @account.name
+  end
+
+  test "toggle_favorite requires write permission" do
+    sign_in users(:family_member)
+
+    patch toggle_favorite_account_url(accounts(:credit_card))
+    assert_redirected_to account_url(accounts(:credit_card))
+    assert_not accounts(:credit_card).reload.favorite?
+  end
+
   test "toggle_hidden requires write permission" do
     sign_in users(:family_member)
 

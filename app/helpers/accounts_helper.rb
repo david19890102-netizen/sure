@@ -70,7 +70,7 @@ module AccountsHelper
       .pick(Arel.sql("count(*)"), Arel.sql("max(account_providers.updated_at)"))
 
     [
-      family.build_cache_key("account_sidebar_tabs_v9", invalidate_on_data_updates: true),
+      family.build_cache_key("account_sidebar_tabs_v10", invalidate_on_data_updates: true),
       family.manual_reconciliation?,
       Current.user&.id,
       shares_version,
@@ -104,6 +104,17 @@ module AccountsHelper
   # a visible account stays, and its total still includes the hidden ones.
   def sidebar_account_groups(account_groups)
     account_groups.select { |group| group.accounts.any? { |account| !account.hidden? } }
+  end
+
+  # Favorites in the same order as the sidebar groups, which already applies
+  # the saved group order and the account sort. Hidden accounts stay out of
+  # the quick view even when they are still marked favorite.
+  def favorite_accounts(family = Current.family)
+    family.balance_sheet.account_groups.flat_map(&:accounts).select { |account| account.favorite? && !account.hidden? }
+  end
+
+  def account_manageable?(account)
+    account.permission_for(Current.user).in?([ :owner, :full_control ])
   end
 
   # Provider cards and the manual-accounts list group by type. With no saved

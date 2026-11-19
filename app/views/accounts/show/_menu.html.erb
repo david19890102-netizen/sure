@@ -23,6 +23,12 @@
       <% menu.with_item(variant: "button", text: t(".hide"), href: toggle_hidden_account_path(account), method: :patch, icon: "archive", data: { turbo_frame: :_top }) %>
     <% end %>
 
+    <% if account.favorite? %>
+      <% menu.with_item(variant: "button", text: t(".unfavorite"), href: toggle_favorite_account_path(account), method: :patch, icon: "star-off", data: { turbo_frame: :_top }) %>
+    <% else %>
+      <% menu.with_item(variant: "button", text: t(".favorite"), href: toggle_favorite_account_path(account), method: :patch, icon: "star", data: { turbo_frame: :_top }) %>
+    <% end %>
+
     <% if account.supports_trades? %>
       <% menu.with_item(
         variant: "link",

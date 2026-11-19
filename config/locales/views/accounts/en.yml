@@ -30,6 +30,8 @@ en:
       hide: Hide account
       unhide: Unhide account
       hidden_indicator: Hidden from the sidebar and account pickers
+      favorite: Add to favorites
+      unfavorite: Remove from favorites
       set_default: Set as default
       remove_default: Unset default
       default_label: Default
@@ -181,9 +183,14 @@ en:
         include_in_reports: Include in reports
         hide: Hide account
         unhide: Unhide account
+        favorite: Add to favorites
+        unfavorite: Remove from favorites
     update:
       success: "%{type} account updated"
       logo_not_applied: The account was saved, but the chosen icon could not be downloaded. Try again or upload your own.
+    favorite:
+      add: "Add %{name} to favorites"
+      remove: "Remove %{name} from favorites"
     sidebar:
       missing_data: Missing historical data
       missing_data_description: "%{product} uses third party providers to fetch historical exchange rates, security prices, and more. This data is required to calculate accurate historical account balances."
@@ -198,6 +205,7 @@ en:
       new_account_group: "New %{account_group}"
       expand_all: Expand all
       collapse_all: Collapse all
+      favorites: Favorites
       hidden_accounts:
         one: "%{count} hidden account"
         other: "%{count} hidden accounts"

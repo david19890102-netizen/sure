@@ -77,6 +77,9 @@
           frame: :modal
         ) %>
       <% elsif !account.pending_deletion? %>
+        <% if account_manageable?(account) %>
+          <%= render "accounts/favorite_toggle", account: account %>
+        <% end %>
         <% permission = account.permission_for(Current.user) %>
         <%= render DS::Menu.new(icon_vertical: true, mobile_fullwidth: false, max_width: "280px") do |menu| %>
           <% if permission.in?([ :owner, :full_control ]) %>
@@ -122,6 +125,12 @@
               <% menu.with_item(variant: "button", text: t("accounts.account.unhide"), href: toggle_hidden_account_path(account), method: :patch, icon: "archive-restore", data: { turbo_frame: :_top }) %>
             <% else %>
               <% menu.with_item(variant: "button", text: t("accounts.account.hide"), href: toggle_hidden_account_path(account), method: :patch, icon: "archive", data: { turbo_frame: :_top }) %>
+            <% end %>
+
+            <% if account.favorite? %>
+              <% menu.with_item(variant: "button", text: t("accounts.account.unfavorite"), href: toggle_favorite_account_path(account), method: :patch, icon: "star-off", data: { turbo_frame: :_top }) %>
+            <% else %>
+              <% menu.with_item(variant: "button", text: t("accounts.account.favorite"), href: toggle_favorite_account_path(account), method: :patch, icon: "star", data: { turbo_frame: :_top }) %>
             <% end %>
           <% end %>
 
