@@ -1,6 +1,16 @@
 require "test_helper"
 
 class UI::PeriodPickerTest < ViewComponent::TestCase
+  test "includes the one day and one week periods in the menu" do
+    render_inline(UI::PeriodPicker.new(selected: "last_30_days", url: "/", frame: "dashboard_sections"))
+
+    hrefs = page.all("a[role='menuitemradio']").map { |link| link[:href] }
+    assert hrefs.any? { |href| href.include?("period=last_day") }
+    assert hrefs.any? { |href| href.include?("period=last_7_days") }
+    assert_text Period.from_key("last_day").label_short
+    assert_text Period.from_key("last_7_days").label_short
+  end
+
   test "renders one menuitemradio link per period, all carrying the period param and target frame" do
     render_inline(UI::PeriodPicker.new(selected: "last_30_days", url: "/", frame: "dashboard_sections"))
 
