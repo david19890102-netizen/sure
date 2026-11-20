@@ -32,6 +32,50 @@ class BudgetBooksTest < ActiveSupport::TestCase
     assert_equal 750, statement.income_totals(period: family.period).total
   end
 
+  test "uses child overrides as independent envelopes and includes report-hidden accounts only in the family book" do
+    family_expense = @family.categories.create!(name: "Test family medical", parent: @personal, budget_book: "family")
+    family_income = @family.categories.create!(name: "Test family rent", parent: @personal, budget_book: "family")
+    personal_expense = @family.categories.create!(name: "Test personal costs", parent: @family_parent, budget_book: "personal")
+    hidden = @family.accounts.create!(name: "Test private bank", balance: 100, currency: "USD",
+      exclude_from_reports: true, accountable: Depository.new)
+
+    visible_personal = post_entry(20, personal_expense)
+    post_entry(30, @family_child)
+    hidden_family = post_entry(90, family_expense, account: hidden)
+    post_entry(-250, family_income, account: hidden)
+    hidden_personal = post_entry(50, personal_expense, account: hidden)
+    excluded = post_entry(999, family_expense, account: hidden, excluded: true)
+
+    assert_nil @family_child.budget_book
+    assert_equal "family", @family_child.effective_budget_book
+    assert_equal "family", family_expense.effective_budget_book
+    assert_equal "personal", personal_expense.effective_budget_book
+    assert_equal [ family_expense.id, family_income.id, @family_parent.id, @family_child.id ].sort,
+      @family.categories.in_budget_book("family").ids.sort
+
+    personal = budget
+    family = budget(book: "family")
+    family.update!(budgeted_spending: 100)
+    envelope = family.book_budget_categories_scope.find_by!(category: family_expense)
+    envelope.update_budgeted_spending!(40)
+
+    assert_equal [ 20, 0 ], [ personal.actual_spending, personal.actual_income ]
+    assert_equal [ 120, 250 ], [ family.actual_spending, family.actual_income ]
+    assert_equal 40, family.allocated_spending
+    assert_equal 90, envelope.actual_spending
+    assert envelope.over_budget?
+    assert_equal 90, family.to_donut_segments_json.find { |segment| segment[:id] == envelope.id }.fetch(:amount)
+    assert_includes family.transactions, hidden_family.transaction
+    assert_not_includes family.transactions, excluded.transaction
+    assert_includes personal.transactions, visible_personal.transaction
+    assert_not_includes personal.transactions, hidden_personal.transaction
+    assert_not_includes personal.transactions, hidden_family.transaction
+
+    statement = @family.income_statement
+    assert_equal 50, statement.expense_totals(period: family.period).total
+    assert_equal 0, statement.income_totals(period: family.period).total
+  end
+
   test "switching a parent moves its children and keeps the stored allocations in each book" do
     legacy = budget
     legacy.update!(expected_income: 500, budgeted_spending: 350)
@@ -69,8 +113,8 @@ class BudgetBooksTest < ActiveSupport::TestCase
       Budget.find_or_bootstrap(@family, start_date: date, book: book)
     end
 
-    def post_entry(amount, category)
-      @account.entries.create!(name: "Budget fixture", amount: amount, currency: "USD",
-        date: Date.current, entryable: Transaction.new(category: category))
+    def post_entry(amount, category, account: @account, excluded: false)
+      account.entries.create!(name: "Budget fixture", amount: amount, currency: "USD",
+        date: Date.current, excluded: excluded, entryable: Transaction.new(category: category))
     end
 end

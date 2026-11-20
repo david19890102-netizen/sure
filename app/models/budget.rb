@@ -133,12 +133,20 @@ class Budget < ApplicationRecord
     budget_categories.where(category_id: categories_for_book.select(:id))
   end
 
+  def include_report_excluded_accounts?
+    !@include_all_categories && book == "family"
+  end
+
+  def nested_category?(category)
+    @include_all_categories ? category.parent_id.present? : category.nested_in_budget_book?
+  end
+
   def includes_uncategorized?
     book == "personal"
   end
 
   def sync_budget_categories
-    current_categories_by_id = categories_for_book.index_by(&:id)
+    current_categories_by_id = categories_for_book.includes(:parent).index_by(&:id)
     categories_to_add = current_categories_by_id.keys - budget_categories.pluck(:category_id)
     inherited_rollover = inherited_rollover_flags(categories_to_add)
 
@@ -186,11 +194,16 @@ class Budget < ApplicationRecord
   def transactions
     scope = family.transactions.visible.in_period(period)
 
-    if user_id.present?
-      scope = scope.joins(:entry).where(entries: { account_id: family.accounts.where(owner_id: user_id).included_in_reports.select(:id) })
+    accounts = if user_id.present?
+      family.accounts.where(owner_id: user_id)
     elsif current_user
-      scope = scope.joins(:entry).where(entries: { account_id: family.accounts.accessible_by(current_user).included_in_reports.select(:id) })
+      family.accounts.accessible_by(current_user)
+    else
+      family.accounts
     end
+
+    accounts = accounts.included_in_reports unless include_report_excluded_accounts?
+    scope = scope.joins(:entry).where(entries: { account_id: accounts.select(:id), excluded: false })
 
     return scope if @include_all_categories
 
@@ -581,7 +594,10 @@ class Budget < ApplicationRecord
     def income_statement_accounts
       return @income_statement_accounts if @income_statement_accounts
 
-      family.accounts.where(owner_id: user_id).included_in_reports if user_id.present?
+      return unless user_id.present?
+
+      accounts = family.accounts.where(owner_id: user_id)
+      include_report_excluded_accounts? ? accounts : accounts.included_in_reports
     end
 
     def net_totals

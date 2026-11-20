@@ -33,7 +33,7 @@ class BudgetCategory < ApplicationRecord
     delegate :name, :color, to: :category
 
     def self.for(budget_categories)
-      top_level_categories = budget_categories.select { |budget_category| budget_category.category.parent_id.nil? }
+      top_level_categories = budget_categories.reject(&:subcategory?)
       top_level_categories.map do |top_level_category|
         subcategories = budget_categories.select { |bc| bc.category.parent_id == top_level_category.category_id && top_level_category.category_id.present? }
         new(top_level_category, subcategories.sort_by { |subcategory| subcategory.category.name })
@@ -215,7 +215,7 @@ class BudgetCategory < ApplicationRecord
   end
 
   def subcategory?
-    category.parent_id.present?
+    budget.nested_category?(category)
   end
 
   # Materialized by Budget::RolloverCalculator, never derived on read. Going
@@ -437,10 +437,10 @@ class BudgetCategory < ApplicationRecord
     end
 
     def sync_parent_budgeted_spending!(previous_budgeted_spending:)
-      parent_budget_category = budget.budget_categories.where(category_id: category.parent_id).lock.first
+      parent_budget_category = budget.book_budget_categories_scope.where(category_id: category.parent_id).lock.first
       return unless parent_budget_category
 
-      sibling_budgeted_spending = budget.budget_categories
+      sibling_budgeted_spending = budget.book_budget_categories_scope
         .joins(:category)
         .where(categories: { parent_id: category.parent_id })
         .where.not(id: id)

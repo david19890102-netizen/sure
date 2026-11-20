@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_20_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_20_120200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -417,7 +417,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_120100) do
     t.string "name", null: false
     t.uuid "parent_id"
     t.datetime "updated_at", null: false
-    t.string "budget_book", default: "personal", null: false
+    t.string "budget_book"
     t.index ["family_id", "last_used_at"], name: "index_categories_on_family_id_and_last_used_at"
     t.index ["family_id", "name"], name: "index_categories_on_family_id_and_name", unique: true
     t.index ["family_id"], name: "index_categories_on_family_id"

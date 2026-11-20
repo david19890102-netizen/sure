@@ -27,4 +27,33 @@ class BudgetBooksSystemTest < ApplicationSystemTestCase
     end
     assert_no_text category.name
   end
+
+  test "moves a child to the family book and shows spending from a report-hidden account" do
+    user = users(:family_admin)
+    family = user.family
+    parent = family.categories.create!(name: "Test shared parent", budget_book: "personal")
+    child = family.categories.create!(name: "Test independent child", parent: parent)
+    account = family.accounts.create!(name: "Test private bank", owner: user, balance: 100, currency: "USD",
+      exclude_from_reports: true, accountable: Depository.new)
+    account.entries.create!(name: "Test private purchase", date: Date.current, amount: 73, currency: "USD",
+      entryable: Transaction.new(category: child))
+    sign_in user
+
+    visit edit_category_path(child)
+    within "form[action='#{category_path(child)}']" do
+      assert_equal "", find_field("category_budget_book").value
+      select "Family", from: "category_budget_book"
+      find("[type=submit]").click
+    end
+    assert_no_selector "form[action='#{category_path(child)}']"
+
+    visit budgets_path(book: "family")
+    assert_text "$73.00"
+    find("a", text: child.name).click
+    assert_text "Test private purchase"
+
+    visit budgets_path
+    assert_no_text child.name
+    assert_no_text "$73.00"
+  end
 end

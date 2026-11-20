@@ -65,9 +65,11 @@
           <%= f.select :parent_id, categories.pluck(:name, :id), { include_blank: t(".unassigned"), label: t(".parent_category_label") }, disabled: category.parent?, data: { action: "change->color-icon-picker#handleParentChange" } %>
         <% end %>
         <%= f.select :budget_book,
-              Category::BUDGET_BOOKS.map { |book| [t("budgets.books.#{book}"), book] },
-              { label: t(".budget_book_label"), selected: category.effective_budget_book },
-              disabled: category.subcategory? %>
+              [ [t(category.subcategory? ? ".budget_book_inherit" : ".budget_book_default"), ""],
+                *Category::BUDGET_BOOKS.map { |book| [t("budgets.books.#{book}"), book] } ],
+              { label: t(".budget_book_label") },
+              data: { color_icon_picker_target: "budgetBook",
+                      inherited_label: t(".budget_book_inherit"), default_label: t(".budget_book_default") } %>
         <p class="text-sm text-secondary"><%= t(".budget_book_hint") %></p>
       </div>
     </section>

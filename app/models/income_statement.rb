@@ -79,8 +79,8 @@ class IncomeStatement
       end
     }
 
-    expense_by_cat = expense.category_totals.reject { |ct| ct.category.subcategory? }.index_by { |ct| cat_key.call(ct) }
-    income_by_cat = income.category_totals.reject { |ct| ct.category.subcategory? }.index_by { |ct| cat_key.call(ct) }
+    expense_by_cat = expense.category_totals.reject { |ct| nested_category?(ct.category) }.index_by { |ct| cat_key.call(ct) }
+    income_by_cat = income.category_totals.reject { |ct| nested_category?(ct.category) }.index_by { |ct| cat_key.call(ct) }
 
     all_keys = (expense_by_cat.keys + income_by_cat.keys).uniq
     raw_expense_categories = []
@@ -205,6 +205,10 @@ class IncomeStatement
       @categories ||= family.categories.includes(:parent).to_a
     end
 
+    def nested_category?(category)
+      @budget_book ? category.nested_in_budget_book? : category.subcategory?
+    end
+
     def period_cache_key(period)
       [ period.start_date, period.end_date ]
     end
@@ -216,6 +220,12 @@ class IncomeStatement
 
       uncategorized_category = family.categories.uncategorized
       other_investments_category = family.categories.other_investments
+
+      child_totals = totals.group_by(&:parent_category_id)
+      if @budget_book
+        nested_ids = categories.select { |category| nested_category?(category) }.map(&:id).to_set
+        child_totals.transform_values! { |rows| rows.select { |row| nested_ids.include?(row.category_id) } }
+      end
 
       category_totals = [ *categories, uncategorized_category, other_investments_category ].map do |category|
         parent_category_total = if category.uncategorized?
@@ -231,7 +241,7 @@ class IncomeStatement
         children_totals = if category.synthetic?
           0
         else
-          totals.select { |t| t.parent_category_id == category.id }&.sum(&:total) || 0
+          child_totals.fetch(category.id, []).sum(&:total)
         end
 
         category_total = parent_category_total + children_totals
@@ -248,7 +258,7 @@ class IncomeStatement
 
       PeriodTotal.new(
         classification: classification,
-        total: category_totals.reject { |ct| ct.category.subcategory? }.sum(&:total),
+        total: category_totals.reject { |ct| nested_category?(ct.category) }.sum(&:total),
         currency: family.currency,
         category_totals: category_totals
       )
@@ -359,7 +369,7 @@ class IncomeStatement
     def budget_category_cache_key
       return [] unless @budget_book
 
-      [ @budget_book, family.categories.in_budget_book(@budget_book).reorder(:id).pluck(:id) ]
+      [ "budget_book_v2", @budget_book, family.categories.in_budget_book(@budget_book).reorder(:id).pluck(:id) ]
     end
 
     def totals_query(transactions_scope:, date_range:)
@@ -367,7 +377,7 @@ class IncomeStatement
 
       Rails.cache.fetch([
         "income_statement", "totals_query", "v2", ExchangeRate::CONVERSION_CACHE_VERSION, family.id, user&.id, included_account_ids_hash, sql_hash, date_range.begin, date_range.end, *cache_freshness_key
-      ]) { Totals.new(family, transactions_scope: transactions_scope, date_range: date_range, included_account_ids: included_account_ids).call }
+      ]) { Totals.new(family, transactions_scope: transactions_scope, date_range: date_range, included_account_ids: included_account_ids, budget_book: @budget_book).call }
     end
 
     def monetizable_currency

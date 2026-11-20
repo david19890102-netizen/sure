@@ -18,7 +18,9 @@ en:
       edit: Edit category
     form:
       budget_book_label: Budget book
-      budget_book_hint: Subcategories use their parent’s budget book.
+      budget_book_inherit: Follow parent category
+      budget_book_default: Personal (default)
+      budget_book_hint: Subcategories can follow their parent or use a different budget book.
       placeholder: Category name
       name_label: Name
       unassigned: "(unassigned)"
