@@ -8,6 +8,7 @@ class ReportsController < ApplicationController
 
   def index
     remember_net_worth_change_mode
+    @net_worth_range = %w[month year all].include?(params[:net_worth_period]) ? params[:net_worth_period] : "month"
     setup_report_data(show_flash: true)
 
     # Build reports sections for collapsible/reorderable UI
@@ -178,18 +179,10 @@ class ReportsController < ApplicationController
       )
       all_sections = [
         {
-          key: "net_worth_change",
-          title: "reports.net_worth_change.title",
-          partial: "reports/net_worth_change",
-          locals: { change: change },
-          visible: accessible_accounts.any?,
-          collapsible: true
-        },
-        {
           key: "net_worth",
           title: "reports.net_worth.title",
           partial: "reports/net_worth",
-          locals: { net_worth_metrics: @net_worth_metrics },
+          locals: { net_worth_metrics: @net_worth_metrics, change: change, range: @net_worth_range },
           visible: accessible_accounts.any?,
           collapsible: true
         },
@@ -250,15 +243,6 @@ class ReportsController < ApplicationController
       # Add any new sections that aren't in the saved order (future-proofing)
       all_sections.each do |section|
         ordered_sections << section unless ordered_sections.include?(section)
-      end
-
-      # The change curve stays at the top until a saved order names it.
-      # Dragging the sections writes that order, so a later visit keeps the spot.
-      stored = Current.user.preferences&.[]("reports_section_order")
-      placed = stored.is_a?(Array) && stored.map(&:to_s).include?("net_worth_change")
-      unless placed
-        chart, rest = ordered_sections.partition { |section| section[:key] == "net_worth_change" }
-        ordered_sections = chart + rest
       end
 
       ordered_sections
@@ -769,7 +753,7 @@ class ReportsController < ApplicationController
 
       # Get net worth series for the period to calculate change
       # The series.trend gives us the change from first to last value in the period
-      net_worth_series = balance_sheet.net_worth_series(period: @period)
+      net_worth_series = balance_sheet.net_worth_series(period: @net_worth_range ? net_worth_chart_period : @period)
       trend = net_worth_series&.trend
 
       # Get asset and liability groups for breakdown
@@ -781,11 +765,6 @@ class ReportsController < ApplicationController
         { name: group.name, total: Money.new(group.total, currency) }
       end.reject { |g| g[:total].zero? }
 
-      # Monthly net worth series with per-account-group breakdown for the chart
-      breakdown_series = BalanceSheet::NetWorthBreakdownSeriesBuilder
-        .new(Current.family, user: Current.user)
-        .breakdown_series(period: @period)
-
       {
         current_net_worth: Money.new(current_net_worth, currency),
         total_assets: Money.new(total_assets, currency),
@@ -793,9 +772,22 @@ class ReportsController < ApplicationController
         trend: trend,
         series: net_worth_series,
         asset_groups: asset_groups,
-        liability_groups: liability_groups,
-        breakdown_series: breakdown_series
+        liability_groups: liability_groups
       }
+    end
+
+    def net_worth_chart_period
+      today = Date.current
+      start = case @net_worth_range
+      when "year"
+        today.beginning_of_year - 1.day
+      when "all"
+        historical = BalanceSheet::HistoricalAccountScope.new(Current.family, user: Current.user).relation
+        Balance.where(account_id: historical.select(:id), date: ..today).minimum(:date) || today
+      else
+        today - 30.days
+      end
+      Period.custom(start_date: start, end_date: today)
     end
 
     def apply_transaction_filters(scope)

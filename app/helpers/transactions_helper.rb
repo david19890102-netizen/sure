@@ -25,6 +25,56 @@ module TransactionsHelper
     filters.reject { |filter| exclude.include?(filter[:key]) }
   end
 
+  ACCOUNT_FILTER_GROUPS = {
+    "銀" => "bank", "卡" => "card", "證" => "brokerage", "外" => "foreign",
+    "現" => "cash", "貸" => "loan", "房" => "property", "加" => "digital", "幣" => "crypto"
+  }.freeze
+  ACCOUNT_FILTER_TYPES = {
+    "Depository" => "bank", "CreditCard" => "card", "Investment" => "brokerage",
+    "Loan" => "loan", "Property" => "property", "Crypto" => "crypto"
+  }.freeze
+
+  def transaction_filter_accounts
+    @transaction_filter_accounts ||= Current.user.accessible_accounts.alphabetically
+      .select(:id, :name, :accountable_type).to_a
+  end
+
+  def transaction_account_filter_active?
+    @q[:accounts].present? || @q[:account_ids].present?
+  end
+
+  def selected_transaction_filter_accounts
+    @selected_transaction_filter_accounts ||= if transaction_account_filter_active?
+      transaction_filter_accounts.select do |account|
+        (@q[:accounts].blank? || @q[:accounts].include?(account.name)) &&
+          (@q[:account_ids].blank? || @q[:account_ids].include?(account.id))
+      end
+    else
+      []
+    end
+  end
+
+  def grouped_transaction_filter_accounts
+    groups = transaction_filter_accounts.group_by do |account|
+      prefix = account.name[/\A\s*([銀卡證外現貸房加幣])\s*[|｜]/, 1]
+      ACCOUNT_FILTER_GROUPS[prefix] || ACCOUNT_FILTER_TYPES.fetch(account.accountable_type, "other")
+    end
+    (ACCOUNT_FILTER_GROUPS.values + [ "other" ]).filter_map do |key|
+      [ key, groups.fetch(key) ] if groups.key?(key)
+    end
+  end
+
+  def transaction_filter_date_label
+    start_date, end_date = @q.values_at(:start_date, :end_date)
+    if start_date.present? && end_date.present?
+      t("transactions.searches.summary.date_range", from: start_date, to: end_date)
+    elsif start_date.present?
+      t("transactions.searches.filters.badge.on_or_after", date: start_date)
+    else
+      t("transactions.searches.filters.badge.on_or_before", date: end_date)
+    end
+  end
+
   # @param label [String] a stored investment_activity_label such as "Sweep In"
   # @return [String] its name in the current locale, or the label itself when
   #   it has no translation

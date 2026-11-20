@@ -7,8 +7,36 @@ en:
       title: No investment accounts to show
     sections:
       accounts: Accounts
+      stock_assets: Stock assets
     show:
       section_aria: "%{title} section. Press Enter or Space to grab for reordering, then use arrow keys to move."
       sections_aria: Portfolio sections
       subtitle: Your investment accounts and what each one is worth.
       title: Portfolio
+    stock_assets:
+      details: Details
+      holding: Holding
+      market_value: Stock market value
+      missing_rates: Some holdings are missing exchange rates. The allocation includes convertible holdings only, and affected months are excluded from the growth statistics.
+      no_holdings: No stock or ETF holdings to show.
+      open: View stock assets
+      unavailable: "—"
+      weight: Weight
+    stock_growth:
+      month_result: "%{month} · %{value}"
+      average: Average monthly change
+      best: Best month
+      mode: Stock value change unit
+      modes:
+        amount: Amount
+        percent: "%"
+      no_data: There is not enough holdings history to compare this period.
+      period: Stock value change period
+      periods:
+        all: All
+        six_months: Last 6 months
+        year: This year
+      rising: Up months
+      title: Monthly stock value growth
+      worst: Worst month
+      zero: "Baseline %{value}"

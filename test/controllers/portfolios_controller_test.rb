@@ -43,12 +43,12 @@ class PortfoliosControllerTest < ActionDispatch::IntegrationTest
     assert_equal "last_30_days", @user.reload.default_period
   end
 
-  test "renders the hub and the accounts section" do
+  test "renders the stock assets and accounts sections" do
     get portfolio_path
 
     assert_response :success
     assert_select "h1", text: I18n.t("portfolios.show.title")
-    assert_equal %w[accounts], css_select("[data-section-key]").map { |node| node["data-section-key"] }
+    assert_equal %w[stock_assets accounts], css_select("[data-section-key]").map { |node| node["data-section-key"] }
     assert_select "header + div[role=list]"
   end
 

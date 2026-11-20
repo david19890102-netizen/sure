@@ -1,0 +1,42 @@
+---
+zh-TW:
+  portfolios:
+    empty_state:
+      add_account: 新增投資帳戶
+      description: 這裡會顯示已納入財務與報表的證券、退休及加密貨幣帳戶與餘額。
+      title: 沒有可顯示的投資帳戶
+    sections:
+      accounts: 帳戶
+      stock_assets: 股票資產
+    show:
+      section_aria: "%{title}區塊。按 Enter 或空白鍵抓取，再用方向鍵移動。"
+      sections_aria: 投資組合區塊
+      subtitle: 查看股票配置、市值變化與各投資帳戶。
+      title: 投資組合
+    stock_assets:
+      details: 明細
+      holding: 持股
+      market_value: 股票市值
+      missing_rates: 部分持股缺少匯率。配置只計入可換算的持股，受影響月份不計入月增統計。
+      no_holdings: 目前沒有可計入的股票或 ETF 持股。
+      open: 查看股票資產
+      unavailable: "—"
+      weight: 佔比
+    stock_growth:
+      month_result: "%{month} · %{value}"
+      average: 平均月增
+      best: 最佳月
+      mode: 股票市值變動單位
+      modes:
+        amount: 金額
+        percent: "%"
+      no_data: 這個期間沒有足夠的持股市值可比較。
+      period: 股票市值變動期間
+      periods:
+        all: 全部
+        six_months: 近 6 月
+        year: 今年
+      rising: 上漲月數
+      title: 股票資產月增率
+      worst: 最差月
+      zero: "基準線 %{value}"

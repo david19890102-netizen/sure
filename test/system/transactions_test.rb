@@ -57,9 +57,50 @@ class TransactionsTest < ApplicationSystemTestCase
     assert_selector "#" + dom_id(@transaction), count: 1
 
     within "#transaction-search-filters" do
-      assert_text @transaction.account.name
+      click_button "Accounts: 1"
+      within "#transaction-account-summary" do
+        assert_checked_field @transaction.account.name
+      end
+      click_button "Accounts: 1"
+      find("#transaction-more-filters-button").click
       assert_text @transaction.transaction.category.name
     end
+  end
+
+  test "mobile combines selected accounts and dates and can adjust accounts without losing other filters" do
+    bank = @user.family.accounts.create!(name: "銀｜測試銀行", balance: 0, currency: "USD", accountable: Depository.new)
+    card = @user.family.accounts.create!(name: "卡｜測試信用卡", balance: 0, currency: "USD", accountable: CreditCard.new)
+    page.current_window.resize_to(390, 850)
+    from = Date.current.beginning_of_month.iso8601
+    to = Date.current.iso8601
+    visit transactions_path(locale: "zh-TW", q: {
+      account_ids: [ bank.id, card.id ], start_date: from, end_date: to, types: [ "income" ], status: [ "confirmed" ]
+    })
+
+    within "#transaction-search-filters" do
+      assert_text "#{from} ~ #{to}"
+      click_button "帳戶：2 個"
+      within "#transaction-account-summary" do
+        assert_selector "fieldset[data-testid='account-filter-group-bank'] legend", text: "銀・銀行"
+        assert_selector "fieldset[data-testid='account-filter-group-card'] legend", text: "卡・信用卡"
+        uncheck card.name
+        find("[type='submit']").click
+      end
+    end
+
+    within "#transaction-search-filters" do
+      assert_button "帳戶：1 個"
+      assert_text "收入"
+      assert_text "已確認"
+    end
+    query = Rack::Utils.parse_nested_query(URI.parse(page.current_url).query).fetch("q")
+    assert_equal [ bank.id ], query.fetch("account_ids")
+    assert_equal [ "income" ], query.fetch("types")
+    assert_equal [ "confirmed" ], query.fetch("status")
+    assert_equal from, query.fetch("start_date")
+    assert_equal to, query.fetch("end_date")
+    click_on "全部清除"
+    assert_no_selector "#transaction-search-filters"
   end
 
   test "can filter uncategorized transactions" do
@@ -127,14 +168,8 @@ class TransactionsTest < ApplicationSystemTestCase
 
     assert_text "No entries found"
 
-    # Remove all filters by clicking their X buttons
-    # Get all the filter buttons at once to avoid stale elements
-    filter_count = page.all("ul#transaction-search-filters li button").count
-
-    # Click each one with a small delay to let Turbo update
-    filter_count.times do
-      page.all("ul#transaction-search-filters li button").first.click
-      sleep 0.1
+    within "#transaction-search-filters" do
+      click_on "Clear all"
     end
 
     assert_text @transaction.name

@@ -1,0 +1,56 @@
+<%# locals: (stock_assets:) %>
+<% holdings = stock_assets.allocation %>
+<% total = stock_assets.total %>
+<div class="space-y-6" id="portfolio-stock-assets">
+  <div class="grid gap-4 @2xl:grid-cols-[auto_minmax(0,1fr)] @2xl:items-start">
+    <% if holdings.any? %>
+      <% segments = holdings.each_with_index.map { |row, index| { id: row[:security].id, amount: row[:amount].to_f, color: stock_segment_color(index) } } %>
+      <div class="mx-auto size-44 max-w-full relative"
+           data-controller="donut-chart"
+           data-donut-chart-segments-value="<%= segments.to_json %>"
+           data-donut-chart-segment-height-value="6">
+        <div data-donut-chart-target="chartContainer" class="absolute inset-0 privacy-sensitive" aria-hidden="true"></div>
+        <div data-donut-chart-target="contentContainer" class="grid h-full place-items-center">
+          <div data-donut-chart-target="defaultContent" class="text-center">
+            <p class="text-xs text-secondary"><%= t(".market_value") %></p>
+            <p data-donut-chart-target="amount" class="font-semibold tabular-nums privacy-sensitive"><%= format_money(total) %></p>
+          </div>
+        </div>
+      </div>
+      <%= render DS::Disclosure.new(title: t(".details"), open: true, class: "min-w-0") do %>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="text-secondary">
+              <tr>
+                <th scope="col" class="p-2 text-left"><%= t(".holding") %></th>
+                <th scope="col" class="p-2 text-right"><%= t(".market_value") %></th>
+                <th scope="col" class="p-2 text-right"><%= t(".weight") %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-subdued">
+              <% holdings.each_with_index do |row, index| %>
+                <% security = row[:security] %>
+                <tr data-stock-ticker="<%= security.ticker %>">
+                  <th scope="row" class="p-2 text-left font-medium">
+                    <span class="inline-flex items-center gap-2">
+                      <span class="size-2 rounded-full shrink-0" style="background-color: <%= stock_segment_color(index) %>" aria-hidden="true"></span>
+                      <span><%= security.ticker %><% if security.name_zh_tw.present? %> <span class="text-secondary"><%= security.name_zh_tw %></span><% end %></span>
+                    </span>
+                  </th>
+                  <td class="p-2 text-right tabular-nums privacy-sensitive"><%= format_money(Money.new(row[:amount], stock_assets.currency)) %></td>
+                  <td class="p-2 text-right tabular-nums privacy-sensitive"><%= number_to_percentage(row[:weight], precision: 1) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="text-sm text-secondary"><%= t(".no_holdings") %></p>
+    <% end %>
+  </div>
+  <%= render "portfolios/stock_growth", stock_assets: stock_assets %>
+  <% if stock_assets.missing_rates? %>
+    <p class="text-sm text-secondary"><%= t(".missing_rates") %></p>
+  <% end %>
+</div>

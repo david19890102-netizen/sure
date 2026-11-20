@@ -349,8 +349,27 @@ en:
         conversion_failed: "Failed to convert transaction: %{error}"
         unexpected_error: "Unexpected error during conversion: %{error}"
     searches:
+      summary:
+        accounts:
+          one: "Accounts: %{count}"
+          other: "Accounts: %{count}"
+        clear_all: Clear all
+        date_range: "%{from} ~ %{to}"
+        more: "More filters (%{count})"
+        remove_dates: "Clear date range %{range}"
       filters:
         account_filter:
+          groups:
+            bank: Banking
+            card: Credit cards
+            brokerage: Investments
+            foreign: Foreign currency
+            cash: Cash
+            loan: Loans
+            property: Property
+            digital: Digital assets
+            crypto: Crypto
+            other: Other
           filter_accounts: Filter accounts
         category_filter:
           filter_category: Filter category

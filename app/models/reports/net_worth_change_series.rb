@@ -17,7 +17,7 @@ class Reports::NetWorthChangeSeries
   end
 
   # A percent has no base when the period opens at zero. The amount curve
-  # still has a meaning: it is the balance itself.
+  # still has a meaning: it measures change from zero.
   def baseline_missing?
     percent? && baseline_amount.zero?
   end
@@ -33,6 +33,19 @@ class Reports::NetWorthChangeSeries
       interval: series.interval,
       trend: point_trend(points.last[:raw], points.first[:raw]),
       values: points.map { |point| point.except(:raw) }
+    }
+  end
+
+  def summary
+    return if series.nil? || series.values.size < 2
+
+    base = baseline_amount
+    current = numeric(series.values.last.value)
+    delta = current - base
+    {
+      amount: format_amount(Money.new(delta, currency)),
+      percent: (format_percent(percent_of(delta, base)) unless base.zero?),
+      color: point_trend(current, base)[:color]
     }
   end
 

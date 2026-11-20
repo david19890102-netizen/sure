@@ -15,7 +15,9 @@ class PortfoliosController < ApplicationController
       statement: @statement,
       period: @period,
       as_of: @as_of,
-      user: Current.user
+      user: Current.user,
+      stock_range: params[:stock_period],
+      stock_mode: params[:stock_mode]
     )
     @empty = registry.empty?
     @sections = @empty ? [] : registry.sections

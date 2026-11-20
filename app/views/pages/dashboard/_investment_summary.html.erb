@@ -25,6 +25,11 @@
       </div>
     </div>
 
+    <% if preview_features_enabled? %>
+      <%= render DS::Link.new(text: t("portfolios.stock_assets.open"), href: portfolio_path(anchor: "portfolio-stock-assets"),
+            variant: "outline", size: :sm, icon: "chart-pie") %>
+    <% end %>
+
     <% holdings = investment_statement.top_holdings(limit: 5) %>
     <% if holdings.any? %>
       <div class="bg-container-inset rounded-xl p-1 mx-4 overflow-x-auto">

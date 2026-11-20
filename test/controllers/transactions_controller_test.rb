@@ -2404,14 +2404,15 @@ end
     assert_select "#entry_#{@entry.id}", count: 0
   end
 
-  test "index names the account on an account_ids filter chip" do
+  test "index groups account_ids into a count chip with checked options" do
     account = @entry.account
 
     get transactions_url(q: { account_ids: [ account.id ] })
 
     assert_response :success
-    assert_select "#transaction-search-filters li p", text: account.name, count: 1
-    assert_select "#transaction-search-filters li p", text: account.id, count: 0
+    assert_select "#transaction-search-filters button", text: "Accounts: 1", count: 1
+    assert_select "#transaction-account-summary label", text: account.name, count: 1
+    assert_select "#transaction-account-summary input[name='q[account_ids][]'][checked][value=?]", account.id
   end
 
   test "index renders a blank account filter value without failing" do
