@@ -90,6 +90,15 @@ module IncomeStatement::ScopedTransactionsQuery
       ActiveRecord::Base.sanitize_sql([ "AND a.id IN (?)", @account_ids ])
     end
 
+    def scope_to_budget_book_sql
+      return "" unless @budget_book
+
+      ids = @family.categories.in_budget_book(@budget_book).select(:id)
+      filter = "t.category_id IN (#{ids.to_sql})"
+      filter += " OR t.category_id IS NULL" if @budget_book == "personal"
+      "AND (#{filter})"
+    end
+
     # Bind params every income statement query needs; classes merge their
     # extras (date range, interval, account ids) on top.
     def base_sql_params(extra = {})

@@ -1,10 +1,11 @@
 class IncomeStatement::FamilyStats
   include IncomeStatement::ScopedTransactionsQuery
 
-  def initialize(family, interval: "month", account_ids: nil)
+  def initialize(family, interval: "month", account_ids: nil, budget_book: nil)
     @family = family
     @interval = interval
     @account_ids = account_ids
+    @budget_book = budget_book
   end
 
   def call
@@ -50,6 +51,7 @@ class IncomeStatement::FamilyStats
             #{pending_providers_sql}
             #{exclude_tax_advantaged_sql}
             #{scope_to_account_ids_sql}
+            #{scope_to_budget_book_sql}
             #{excluding_scheduled_sql}
           GROUP BY period, #{classification_sql("t")}
         )

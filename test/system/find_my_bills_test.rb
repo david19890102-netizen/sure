@@ -32,14 +32,12 @@ class FindMyBillsTest < ApplicationSystemTestCase
     row = find(:xpath,
       "//div[contains(@class,'justify-between')][.//p[contains(normalize-space(),'GYM MEMBERSHIP')]]",
       match: :first)
+    bill = @family.recurring_transactions.find_by!(name: "GYM MEMBERSHIP")
     within(row) { click_on I18n.t("recurring_transactions.suggested.confirm") }
 
-    # Confirmed on the page it was reviewed on: the bill is a worklist row now.
-    assert_text I18n.t("recurring_transactions.confirmed")
+    assert_selector "a[href^='#{bill_path(bill)}?']", text: bill.name
     assert_current_path bills_path
-
-    bill = @family.recurring_transactions.find_by!(name: "GYM MEMBERSHIP")
-    assert bill.active?
+    assert bill.reload.active?
     assert_operator bill.recurring_occurrences.count, :>, 0
   end
 end

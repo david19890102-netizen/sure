@@ -11,10 +11,11 @@ class IncomeStatement
   # budget's "owned accounts only" view) instead of inferring it from
   # `user.finance_accounts`. `user` is still kept for cache-key/estimate
   # purposes when both are given.
-  def initialize(family, user: nil, accounts: nil)
+  def initialize(family, user: nil, accounts: nil, budget_book: nil)
     @family = family
     @user = user || Current.user
     @accounts = accounts
+    @budget_book = budget_book
   end
 
   def totals(transactions_scope: nil, date_range:)
@@ -255,11 +256,11 @@ class IncomeStatement
 
     def totals_for_period(period)
       @totals_for_period ||= {}
-      @totals_for_period[period_cache_key(period)] ||=
-        totals_query(
-          transactions_scope: family.transactions.visible.excluding_pending.merge(Entry.excluding_scheduled).in_period(period),
-          date_range: period.date_range
-        )
+      @totals_for_period[period_cache_key(period)] ||= begin
+        scope = family.transactions.visible.excluding_pending.merge(Entry.excluding_scheduled).in_period(period)
+        scope = Category.filter_budget_transactions(scope, family: family, book: @budget_book) if @budget_book
+        totals_query(transactions_scope: scope, date_range: period.date_range)
+      end
     end
 
     def unfiltered_daily_expense_series(period)
@@ -316,14 +317,14 @@ class IncomeStatement
       @family_stats ||= {}
       @family_stats[interval] ||= Rails.cache.fetch([
         "income_statement", "family_stats", ExchangeRate::CONVERSION_CACHE_VERSION, family.id, user&.id, interval, included_account_ids_hash, *cache_freshness_key
-      ]) { FamilyStats.new(family, interval:, account_ids: included_account_ids).call }
+      ]) { FamilyStats.new(family, interval:, account_ids: included_account_ids, budget_book: @budget_book).call }
     end
 
     def category_stats(interval: "month")
       @category_stats ||= {}
       @category_stats[interval] ||= Rails.cache.fetch([
         "income_statement", "category_stats", CategoryStats::CACHE_VERSION, ExchangeRate::CONVERSION_CACHE_VERSION, family.id, user&.id, interval, included_account_ids_hash, *cache_freshness_key
-      ]) { CategoryStats.new(family, interval:, account_ids: included_account_ids).call }
+      ]) { CategoryStats.new(family, interval:, account_ids: included_account_ids, budget_book: @budget_book).call }
     end
 
     def included_account_ids
@@ -350,8 +351,15 @@ class IncomeStatement
         family.accounts_status_version,
         family.currency,
         ExchangeRate.maximum(:updated_at)&.to_i,
-        family.investment_contributions_as_spending?
+        family.investment_contributions_as_spending?,
+        *budget_category_cache_key
       ]
+    end
+
+    def budget_category_cache_key
+      return [] unless @budget_book
+
+      [ @budget_book, family.categories.in_budget_book(@budget_book).reorder(:id).pluck(:id) ]
     end
 
     def totals_query(transactions_scope:, date_range:)

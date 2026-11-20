@@ -7,13 +7,17 @@ module BudgetsHelper
   # without a full BudgetsController/BudgetCategoriesController/
   # PlansController request cycle.
   def budget_owner_query
-    params[:owner].present? ? { owner: params[:owner] } : {}
+    query = {}
+    query[:owner] = params[:owner] if params[:owner].present?
+    query[:book] = "family" if params[:book] == "family"
+    query
   end
 
   def budget_has_over_budget?(budget)
     return false unless budget.initialized?
 
-    budget.budget_categories.any?(&:any_over_budget?) || budget.uncategorized_budget_category.any_over_budget?
+    budget.book_budget_categories.any?(&:any_over_budget?) ||
+      (budget.includes_uncategorized? && budget.uncategorized_budget_category.any_over_budget?)
   end
 
   def budget_categories_view_state(budget)
@@ -24,8 +28,8 @@ module BudgetsHelper
   private
 
     def build_budget_categories_view_state(budget)
-      uncategorized_budget_category = budget.uncategorized_budget_category
-      all_category_groups = BudgetCategory::Group.for(budget.budget_categories)
+      uncategorized_budget_category = budget.uncategorized_budget_category if budget.includes_uncategorized?
+      all_category_groups = BudgetCategory::Group.for(budget.book_budget_categories)
 
       over_budget_groups = if budget.initialized?
         filtered_groups_for(all_category_groups) { |budget_category| budget_category.any_over_budget? }
@@ -33,7 +37,7 @@ module BudgetsHelper
         []
       end
 
-      show_over_budget_uncategorized = budget.initialized? && uncategorized_budget_category.any_over_budget?
+      show_over_budget_uncategorized = budget.initialized? && uncategorized_budget_category&.any_over_budget?
       over_budget_count = visible_count_for(over_budget_groups) { |budget_category| budget_category.any_over_budget? }
       over_budget_count += 1 if show_over_budget_uncategorized
 
@@ -43,7 +47,7 @@ module BudgetsHelper
         all_category_groups
       end
 
-      show_on_track_uncategorized = all_category_groups.any? && (!budget.initialized? || uncategorized_budget_category.on_track?)
+      show_on_track_uncategorized = uncategorized_budget_category && all_category_groups.any? && (!budget.initialized? || uncategorized_budget_category.on_track?)
       on_track_count = visible_count_for(on_track_groups) { |budget_category| parent_visible_for_on_track?(budget, budget_category) }
       on_track_count += 1 if show_on_track_uncategorized
       visible_expenses_empty = on_track_count.zero?

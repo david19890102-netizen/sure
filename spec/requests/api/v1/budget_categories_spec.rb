@@ -65,6 +65,7 @@ RSpec.describe 'API V1 Budget Categories', type: :request do
 
   path '/api/v1/budget_categories' do
     get 'List budget categories' do
+      description 'Lists category allocations from the personal book.'
       tags 'Budget Categories'
       security [ { apiKeyAuth: [] } ]
       produces 'application/json'

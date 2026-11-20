@@ -61,7 +61,7 @@ class Api::V1::BudgetCategoriesController < Api::V1::BaseController
     def budget_categories_scope
       BudgetCategory
         .joins(:budget, :category)
-        .where(budgets: { family_id: current_resource_owner.family_id, user_id: visible_owner_ids })
+        .where(budgets: { family_id: current_resource_owner.family_id, user_id: visible_owner_ids, book: "personal" })
         .includes({ budget: { budget_categories: { category: :parent } } }, category: :parent)
     end
 

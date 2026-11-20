@@ -262,6 +262,8 @@ zh-TW:
         name_placeholder: 緊急預備金、購屋頭期款...
         target_amount: 目標金額
         target_date: 目標日期
+        start_date: 起算日（選填）
+        start_date_hint: 以起算日收盤餘額為基準。投資與加密帳戶扣除市價漲跌，當天已存在但缺少基準餘額的帳戶暫不計入。
         color: 顏色
         notes: 備註（選填）
         notes_placeholder: 留給未來的自己的提醒...

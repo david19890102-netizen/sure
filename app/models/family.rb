@@ -60,7 +60,10 @@ class Family < ApplicationRecord
   has_many :categorization_comparisons, dependent: :destroy
   has_many :merchants, dependent: :destroy, class_name: "FamilyMerchant"
 
-  has_many :budgets, dependent: :destroy
+  # Keep legacy consumers (including the mobile API and import) on their
+  # original monthly records. The web budget workspace resolves both books.
+  has_many :budgets, -> { where(book: "personal") }
+  has_many :budget_books, class_name: "Budget", dependent: :destroy
   has_many :budget_categories, through: :budgets
 
   has_many :goals, dependent: :destroy
@@ -540,8 +543,8 @@ class Family < ApplicationRecord
     @balance_sheets[user&.id] ||= BalanceSheet.new(self, user: user)
   end
 
-  def income_statement(user: Current.user, accounts: nil)
-    IncomeStatement.new(self, user: user, accounts: accounts)
+  def income_statement(user: Current.user, accounts: nil, budget_book: nil)
+    IncomeStatement.new(self, user: user, accounts: accounts, budget_book: budget_book)
   end
 
   # Returns the Investment Contributions category for this family, creating it if it doesn't exist.

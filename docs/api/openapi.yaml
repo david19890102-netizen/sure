@@ -5961,6 +5961,7 @@ paths:
   "/api/v1/budget_categories":
     get:
       summary: List budget categories
+      description: Lists category allocations from the personal book.
       tags:
       - Budget Categories
       security:

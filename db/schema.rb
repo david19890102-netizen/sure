@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_19_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_20_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -399,10 +399,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_140000) do
     t.date "start_date", null: false
     t.datetime "updated_at", null: false
     t.uuid "user_id"
-    t.index ["family_id", "start_date", "end_date", "user_id"], name: "index_budgets_personal_unique", unique: true, where: "(user_id IS NOT NULL)"
-    t.index ["family_id", "start_date", "end_date"], name: "index_budgets_shared_unique", unique: true, where: "(user_id IS NULL)"
+    t.string "book", default: "personal", null: false
+    t.index ["family_id", "start_date", "end_date", "book", "user_id"], name: "index_budgets_personal_unique", unique: true, where: "(user_id IS NOT NULL)"
+    t.index ["family_id", "start_date", "end_date", "book"], name: "index_budgets_shared_unique", unique: true, where: "(user_id IS NULL)"
     t.index ["family_id"], name: "index_budgets_on_family_id"
     t.index ["user_id"], name: "index_budgets_on_user_id"
+    t.check_constraint "book::text = ANY (ARRAY['personal'::character varying, 'family'::character varying]::text[])", name: "budgets_book_check"
   end
 
   create_table "categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -415,9 +417,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_140000) do
     t.string "name", null: false
     t.uuid "parent_id"
     t.datetime "updated_at", null: false
+    t.string "budget_book", default: "personal", null: false
     t.index ["family_id", "last_used_at"], name: "index_categories_on_family_id_and_last_used_at"
     t.index ["family_id", "name"], name: "index_categories_on_family_id_and_name", unique: true
     t.index ["family_id"], name: "index_categories_on_family_id"
+    t.check_constraint "budget_book::text = ANY (ARRAY['personal'::character varying, 'family'::character varying]::text[])", name: "categories_budget_book_check"
   end
 
   create_table "categorization_comparisons", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1181,6 +1185,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_140000) do
     t.string "target_mode", default: "fixed", null: false
     t.integer "target_months"
     t.datetime "updated_at", null: false
+    t.date "start_date"
     t.index ["family_id", "state"], name: "index_goals_on_family_id_and_state"
     t.index ["family_id"], name: "index_goals_on_family_id"
     t.check_constraint "char_length(name::text) <= 255", name: "chk_savings_goals_name_length"

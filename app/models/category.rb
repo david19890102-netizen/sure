@@ -1,4 +1,24 @@
 class Category < ApplicationRecord
+  BUDGET_BOOKS = %w[personal family].freeze
+
+  # Resolve inheritance at read time, so moving a parent between books also
+  # moves historical transactions and newly created children in one step.
+  def effective_budget_book
+    parent&.budget_book || budget_book
+  end
+
+  def self.in_budget_book(book)
+    family_roots = unscoped.where(parent_id: nil, budget_book: "family").select(:id)
+    family_categories = unscoped.where(id: family_roots).or(unscoped.where(parent_id: family_roots))
+    book == "family" ? where(id: family_categories.select(:id)) : where.not(id: family_categories.select(:id))
+  end
+
+  def self.filter_budget_transactions(scope, family:, book:)
+    ids = family.categories.in_budget_book(book).select(:id)
+    classified = scope.where(category_id: ids)
+    book == "personal" ? classified.or(scope.where(category_id: nil)) : classified
+  end
+
   has_many :transactions, dependent: :nullify, class_name: "Transaction"
   has_many :import_mappings, as: :mappable, dependent: :destroy, class_name: "Import::Mapping"
 
@@ -24,6 +44,7 @@ class Category < ApplicationRecord
   validates :name, :color, :lucide_icon, :family, presence: true
   validates :color, format: { with: /\A#[0-9A-Fa-f]{6}\z/ }
   validates :name, uniqueness: { scope: :family_id }
+  validates :budget_book, inclusion: { in: BUDGET_BOOKS }
   validates :name, exclusion: { in: [ UNCATEGORIZED_FILTER_VALUE ] }
 
   validate :category_level_limit

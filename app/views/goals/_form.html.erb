@@ -6,6 +6,7 @@
      came back empty and picking "Reserve to maintain" never hid the date. %>
 <div data-controller="goal-form goal-kind"
      data-goal-form-currency-value="<%= goal.currency.presence || Current.family.primary_currency_code %>"
+     data-goal-form-funded-value="<%= goal.start_date ? goal.progress_amount_money.amount : 0 %>"
      data-goal-form-require-account-value="<%= !goal.persisted? %>"
      data-goal-form-suggested-with-date-value="<%= t("goals.form.suggested_with_date") %>"
      data-goal-form-suggested-no-date-value="<%= t("goals.form.suggested_no_date") %>"
@@ -104,6 +105,12 @@
                          label: t("goals.form.fields.target_date"),
                          data: { goal_form_target: "dateInput", action: "input->goal-form#suggestedChanged" } %>
       </div>
+    </div>
+
+    <div>
+      <%= f.date_field :start_date, label: t("goals.form.fields.start_date"),
+            data: { goal_form_target: "startDateInput", action: "input->goal-form#suggestedChanged" } %>
+      <p class="mt-1 text-xs text-secondary"><%= t("goals.form.fields.start_date_hint") %></p>
     </div>
 
     <p class="text-xs text-secondary italic tabular-nums privacy-sensitive hidden" data-goal-form-target="suggested"></p>

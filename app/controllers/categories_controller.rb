@@ -183,7 +183,7 @@ class CategoriesController < ApplicationController
     end
 
     def category_params
-      params.require(:category).permit(:name, :color, :parent_id, :lucide_icon)
+      params.require(:category).permit(:name, :color, :parent_id, :lucide_icon, :budget_book)
     end
 
     def category_merge_params
