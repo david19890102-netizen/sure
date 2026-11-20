@@ -93,9 +93,9 @@
               </span>
             <% end %>
           <% end %>
-          <% if has_sparkline_data?(@trends_data) %>
+          <% if has_sparkline_data?(@net_worth_trends) %>
             <svg width="80" height="24" viewBox="0 0 80 24" style="display:block;margin-top:8px;">
-              <polyline points="<%= sparkline_points(cumulative_net_values(@trends_data), width: 80, height: 24) %>" fill="none" stroke="<%= @net_worth_metrics[:current_net_worth] >= 0 ? "#047857" : "#b91c1c" %>" stroke-width="1.5" />
+              <polyline points="<%= sparkline_points(cumulative_net_values(@net_worth_trends), width: 80, height: 24) %>" fill="none" stroke="<%= @net_worth_metrics[:current_net_worth] >= 0 ? "#047857" : "#b91c1c" %>" stroke-width="1.5" />
             </svg>
           <% end %>
         </div>

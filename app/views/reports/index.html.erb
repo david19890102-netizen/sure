@@ -18,7 +18,7 @@
       <% end %>
 
       <%# Print Report Button %>
-        <%= link_to print_reports_path(period_type: @period_type, start_date: @start_date, end_date: @end_date),
+        <%= link_to print_reports_path(period_type: @period_type, start_date: @start_date, end_date: @end_date, **report_book_params),
                   target: "_blank",
                   rel: "noopener",
                   aria: { label: t("reports.index.print_report") },
@@ -28,13 +28,20 @@
       <% end %>
     </header>
 
+    <%= render DS::SegmentedControl.new(aria_label: t("reports.books.label"), class: "bg-surface-inset") do |control| %>
+      <% %w[all personal family].each do |book| %>
+        <% control.with_segment(t("reports.books.#{book}"), active: @report_book == book,
+             href: reports_path(request.query_parameters.merge(book: book))) %>
+      <% end %>
+    <% end %>
+
     <%# Period Navigation Tabs %>
     <div class="flex items-center justify-between gap-4">
       <%= render DS::SegmentedControl.new(aria_label: t("reports.index.period_aria", default: "Report period"), class: "overflow-x-auto no-scrollbar") do |sc| %>
         <% %i[monthly quarterly ytd last_6_months custom].each do |ptype| %>
           <% sc.with_segment(t("reports.index.periods.#{ptype}"),
                active: @period_type == ptype,
-               href: reports_path(period_type: ptype),
+               href: reports_path(period_type: ptype, **report_book_params),
                class: "whitespace-nowrap") %>
         <% end %>
       <% end %>
@@ -44,6 +51,7 @@
     <% if @period_type == :custom %>
       <%= form_with url: reports_path, method: :get, data: { controller: "auto-submit-form" }, class: "flex items-center gap-3 bg-surface-inset p-3 rounded-lg" do |f| %>
         <%= f.hidden_field :period_type, value: :custom %>
+        <%= hidden_field_tag :book, @report_book if report_book_params.present? %>
 
         <div class="flex items-center gap-2">
           <label class="text-sm font-medium text-secondary"><%= t("reports.index.date_range.from") %></label>
@@ -74,7 +82,7 @@
               <%= render DS::Link.new(
                 variant: "icon",
                 icon: "chevron-left",
-                href: reports_path(period_type: @period_type, start_date: @nav[:prev_start], end_date: @nav[:prev_end]),
+                href: reports_path(period_type: @period_type, start_date: @nav[:prev_start], end_date: @nav[:prev_end], **report_book_params),
                 aria: { label: t("reports.index.previous_period"), keyshortcuts: "ArrowLeft" },
                 data: { controller: "hotkey", hotkey: "ArrowLeft" },
               ) %>
@@ -91,7 +99,7 @@
                 <%= render DS::Link.new(
                   variant: "icon",
                   icon: "chevron-right",
-                  href: reports_path(period_type: @period_type, start_date: @nav[:next_start], end_date: @nav[:next_end]),
+                  href: reports_path(period_type: @period_type, start_date: @nav[:next_start], end_date: @nav[:next_end], **report_book_params),
                   aria: { label: t("reports.index.next_period"), keyshortcuts: "ArrowRight" },
                   data: { controller: "hotkey", hotkey: "ArrowRight" },
                 ) %>
@@ -119,7 +127,7 @@
           <%= render DS::Link.new(
             text: t("reports.index.today"),
             variant: "outline",
-            href: reports_path(period_type: @period_type),
+            href: reports_path(period_type: @period_type, **report_book_params),
           ) %>
         </div>
       </div>

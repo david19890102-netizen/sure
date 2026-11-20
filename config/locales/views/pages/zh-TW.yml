@@ -50,10 +50,15 @@ zh-TW:
         bills: "查看帳單"
         pending: "%{count} 筆配對待確認"
       cashflow_preview:
+        sort_label: 現金流排序
+        sort_auto: 自動
+        sort_ascending: 金額由小到大
+        sort_descending: 金額由大到小
         node_labels:
           cash_flow: "現金流"
           surplus: "盈餘"
           deficit: "赤字"
+          invested: "投入投資"
       welcome: 歡迎回來，%{name}
       subtitle: 這是您目前的財務概況
       new: 新增帳戶

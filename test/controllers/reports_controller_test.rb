@@ -9,6 +9,48 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     @family = @user.family
   end
 
+  test "filters report sections by book and always shows the same net worth" do
+    visible = accounts(:depository)
+    hidden = @family.accounts.create!(name: "Test hidden report bank", owner: @user, currency: "USD",
+      balance: 100, accountable: Depository.new, exclude_from_reports: true)
+    parent = @family.categories.create!(name: "Test personal group")
+    child = @family.categories.create!(name: "Test family child", parent: parent, budget_book: "family")
+    personal = @family.categories.create!(name: "Test personal income")
+
+    create_transaction(account: visible, amount: 73, category: child)
+    create_transaction(account: hidden, amount: 37, category: child)
+    create_transaction(account: hidden, amount: 47, category: child).update!(excluded: true)
+    create_transaction(account: visible, amount: -240, category: personal)
+
+    get reports_path
+    assert_response :success
+    assert_select "[role=group][aria-label='Report book'] a[aria-current=true]", text: "All"
+    net_worth = css_select("[data-section-key=net_worth] .privacy-sensitive").map(&:text)
+    assert_select "[data-category='category-#{child.id}']", text: /73/
+
+    get reports_path(book: "family", sort_direction: "asc")
+    assert_response :success
+    assert_select "[role=group][aria-label='Report book'] a[aria-current=true]", text: "Family"
+    assert_equal net_worth, css_select("[data-section-key=net_worth] .privacy-sensitive").map(&:text)
+    assert_select "[data-category='category-#{child.id}']", text: /110/
+    assert_select "[data-category='category-#{parent.id}']", count: 0
+    assert_select "[data-category='category-#{personal.id}']", count: 0
+    assert_select "a[aria-label=?][href*='book=family']", I18n.t("reports.index.previous_period")
+    assert_select "a[href*='book=family'][href*='sort_by=amount']"
+    sankey = JSON.parse(css_select("[data-preview-sankey-chart-data-value]").sole["data-preview-sankey-chart-data-value"])
+    assert_equal "110.0", sankey.fetch("spending")
+
+    get reports_path(book: "personal")
+    assert_response :success
+    assert_select "[data-category='category-#{personal.id}']", text: /240/
+    assert_select "[data-category='category-#{child.id}']", count: 0
+    assert_equal net_worth, css_select("[data-section-key=net_worth] .privacy-sensitive").map(&:text)
+
+    get reports_path(book: "invalid")
+    assert_response :success
+    assert_select "[role=group][aria-label='Report book'] a[aria-current=true]", text: "All"
+  end
+
   test "the combined net worth curve leads by default and remembers the display mode" do
     get reports_path
 

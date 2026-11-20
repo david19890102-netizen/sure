@@ -46,11 +46,12 @@ class IncomeStatement::SpendingComparison
   # entry can predate real spending by years, and would dilute "normal" with
   # empty months.
   def self.history_start(income_statement)
-    Entry.joins("JOIN transactions ON transactions.id = entries.entryable_id")
-         .where(account_id: income_statement.eligible_accounts.select(:id), entryable_type: "Transaction", excluded: false)
-         .merge(Transaction.excluding_pending)
-         .where.not(transactions: { kind: income_statement.family.analytics_excluded_kinds })
-         .minimum(:date)
+    scope = Entry.joins("JOIN transactions ON transactions.id = entries.entryable_id")
+      .where(account_id: income_statement.eligible_accounts.select(:id), entryable_type: "Transaction", excluded: false)
+      .merge(Transaction.excluding_pending)
+      .where.not(transactions: { kind: income_statement.family.analytics_excluded_kinds })
+    transactions = income_statement.transactions_in_budget_book(Transaction.all)
+    scope.merge(transactions).minimum(:date)
   end
 
   def initialize(income_statement, period:, history_start:, as_of: Date.current)
@@ -79,7 +80,7 @@ class IncomeStatement::SpendingComparison
       baseline = comparable? ? baseline_net : {}
 
       parents = (current.values + baseline.values).map { |e| e[:category] }
-        .reject(&:subcategory?).uniq { |c| key_for(c) }
+        .reject { |c| income_statement.nested_category?(c) }.uniq { |c| key_for(c) }
 
       parents.filter_map { |parent| build_row(parent, current, baseline) }
         .sort_by { |row| -row.total }
@@ -152,7 +153,7 @@ class IncomeStatement::SpendingComparison
     def build_row(parent, current, baseline)
       key = key_for(parent)
       children = (current.values + baseline.values).map { |e| e[:category] }
-        .select { |c| c.subcategory? && c.parent_id == parent.id }.uniq(&:id)
+        .select { |c| income_statement.nested_category?(c) && c.parent_id == parent.id }.uniq(&:id)
 
       total = positive(current.dig(key, :net))
       normal = scaled_normal(baseline.dig(key, :net))

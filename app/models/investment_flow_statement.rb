@@ -14,9 +14,10 @@ class InvestmentFlowStatement
 
   attr_reader :family, :user
 
-  def initialize(family, user: nil)
+  def initialize(family, user: nil, budget_book: nil)
     @family = family
     @user = user
+    @budget_book = budget_book
   end
 
   # Get contribution/withdrawal totals for a period
@@ -30,9 +31,15 @@ class InvestmentFlowStatement
     scope = base.where(kind: %w[standard investment_contribution])
       .or(matched_investment_flows(base))
 
+    if @budget_book
+      scope = Category.filter_budget_transactions(scope, family: family, book: @budget_book)
+      scope = scope.where(entries: { excluded: false })
+    end
+
     if user
-      account_ids = family.accounts.included_in_finances_for(user).included_in_reports.select(:id)
-      scope = scope.where(entries: { account_id: account_ids })
+      accounts = family.accounts.included_in_finances_for(user)
+      accounts = accounts.included_in_reports unless @budget_book == "family"
+      scope = scope.where(entries: { account_id: accounts.select(:id) })
     end
 
     contributions, withdrawals = scope.pick(

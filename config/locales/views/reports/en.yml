@@ -1,6 +1,15 @@
 ---
 en:
   reports:
+    books:
+      label: Report book
+      all: All
+      personal: Personal
+      family: Family
+      net_worth_note: Net worth always uses the All view.
+    cash_flow:
+      title: Cash Flow
+      empty: No cash flow for this period.
     index:
       title: Reports
       subtitle: Comprehensive insights into your financial health
