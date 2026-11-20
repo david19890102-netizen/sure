@@ -12,9 +12,10 @@ class Budget::RolloverCalculator
   # other pg_advisory_lock user in the application.
   LOCK_NAMESPACE = 1_920_231_276
 
-  def initialize(family:, user:)
+  def initialize(family:, user:, book: "personal")
     @family = family
     @user = user
+    @book = book
   end
 
   # The read-then-write below is not atomic on its own: two overlapping
@@ -43,7 +44,7 @@ class Budget::RolloverCalculator
   end
 
   private
-    attr_reader :family, :user
+    attr_reader :family, :user, :book
 
     def lock_chain!
       BudgetCategory.connection.execute(
@@ -54,7 +55,7 @@ class Budget::RolloverCalculator
     end
 
     def chain_key
-      "budget_rollover:#{family.id}:#{user&.id}"
+      "budget_rollover:#{family.id}:#{user&.id}:#{book}"
     end
 
     def recompute_chain!(from)
@@ -79,7 +80,7 @@ class Budget::RolloverCalculator
         next_carry = {}
         ring_fenced_children = ring_fenced_children_by_parent(budget)
 
-        budget.budget_categories.each do |budget_category|
+        budget.book_budget_categories.each do |budget_category|
           # Subcategories that share their parent's budget have no allocation
           # of their own, so there is nothing for them to carry forward.
           next if budget_category.inherits_parent_budget?
@@ -129,11 +130,12 @@ class Budget::RolloverCalculator
     # Only what the chain reads. Rows are digested, not versioned by max(updated_at), so a
     # late-committing or update_all write still counts; family.updated_at moves with every sync.
     def inputs_fingerprint
-      budgets = family.budgets.where(user_id: user&.id)
+      budgets = family.budget_books.where(user_id: user&.id, book: book)
       accounts = user ? family.accounts.where(owner_id: user.id) : family.accounts
 
       [
         digest_of(budgets),
+        digest_of(family.categories.select(:id, :parent_id, :budget_book)),
         digest_of(BudgetCategory.where(budget_id: budgets.select(:id))),
         digest_of(accounts.select(:id, :owner_id, :status, :exclude_from_reports)),
         digest_of(AccountShare.where(account_id: accounts.select(:id)).select(:id, :account_id, :user_id, :include_in_finances)),
@@ -170,15 +172,15 @@ class Budget::RolloverCalculator
       initialized_budgets
         .where("start_date >= ?", seed || from)
         .order(:start_date)
-        .includes(budget_categories: :category)
+        .includes(budget_categories: { category: :parent })
     end
 
     # Only initialized budgets take part: a month the user never set up is a
     # gap in the chain, not a month budgeted at zero, so the carry crosses it
     # untouched (same semantics as Budget#most_recent_initialized_budget).
     def initialized_budgets
-      family.budgets
-        .where(user_id: user&.id)
+      family.budget_books
+        .where(user_id: user&.id, book: book)
         .where.not(budgeted_spending: nil)
     end
 
@@ -201,7 +203,7 @@ class Budget::RolloverCalculator
     end
 
     def ring_fenced_children_by_parent(budget)
-      budget.budget_categories
+      budget.book_budget_categories
         .select { |bc| bc.subcategory? && !bc.inherits_parent_budget? }
         .group_by { |bc| bc.category.parent_id }
     end

@@ -34,6 +34,7 @@ class Goal < ApplicationRecord
   validates :name, presence: true, length: { maximum: 255 }
   validates :target_amount, presence: true, numericality: { greater_than: 0 }
   validates :currency, presence: true
+  after_save :reset_state_dependent_caches!, if: :saved_change_to_start_date?
   # before_save (not before_validation) so it only mutates on persistence, not
   # on every valid? call — a goal can be inspected without its basis flipping.
   before_save :default_progress_basis_for_market_accounts
@@ -414,11 +415,11 @@ class Goal < ApplicationRecord
   # Goes through the same `backing_share_for` as everything else, so a
   # whole-account link is counted for the remainder it actually claims rather
   # than the zero its nil allocation would suggest.
-  def backing_within(account_ids, currency: self.currency)
+  def backing_within(account_ids, currency: self.currency, dated: true)
     ids = Array(account_ids).to_set
     linked_accounts
       .select { |account| ids.include?(account.id) }
-      .sum { |account| convert_money(Money.new(account_amount_for(account), account.currency), to: currency).amount }
+      .sum { |account| convert_money(Money.new(account_amount_for(account, dated: dated), account.currency), to: currency).amount }
   end
 
   # Whether this reader can record a spend against this goal. Two doors lead to
@@ -586,7 +587,7 @@ class Goal < ApplicationRecord
   # the holiday a goal paid for dropped it from 100% to 20%, and the only way
   # back was to edit the target — falsifying what the user had set out to save.
   def remaining_amount
-    @remaining_amount ||= [ target_amount - current_balance - consumed_amount.to_d, 0 ].max
+    @remaining_amount ||= [ target_amount - progress_amount, 0 ].max
   end
 
   # Records that `amount` was spent on the thing this goal was for.
@@ -697,7 +698,7 @@ class Goal < ApplicationRecord
   # ring and the numbers disagreeing on the same card, with nothing to explain
   # which one to believe.
   def progress_amount
-    current_balance.to_d + consumed_amount.to_d
+    current_balance.to_d + (start_date.present? ? 0 : consumed_amount.to_d)
   end
 
   def progress_amount_money
@@ -725,7 +726,7 @@ class Goal < ApplicationRecord
     elsif remaining_amount.to_d.zero?
       100
     else
-      (((current_balance.to_d + consumed_amount.to_d) / target_amount.to_d) * 100).floor.clamp(0, 99)
+      ((progress_amount / target_amount.to_d) * 100).floor.clamp(0, 99)
     end
   end
 
@@ -737,7 +738,7 @@ class Goal < ApplicationRecord
   def months_remaining
     return nil unless target_date
 
-    days = (target_date - Date.current).to_i
+    days = (target_date - [ Date.current, start_date ].compact.max).to_i
     [ (days / 30.0), 0.0 ].max
   end
 
@@ -768,7 +769,9 @@ class Goal < ApplicationRecord
   def pace
     return @pace if defined?(@pace)
 
-    @pace = if linked_accounts.empty?
+    @pace = if start_date
+      dated_pace
+    elsif linked_accounts.empty?
       0
     else
       # Today's rate, not each entry's: pace is an estimate, and a rate per
@@ -819,28 +822,7 @@ class Goal < ApplicationRecord
   # pending-pledge badge) so the Stimulus controller only has to render
   # strings server-side rather than build them with its own Intl calls.
   def projection_payload
-    series_values = balance_series_values
-    # The historical series tracks the whole linked-account balances. Scale it
-    # to this goal's backing so the saved line meets current_balance at "today"
-    # instead of dropping off a cliff for earmarked goals. Assumes the earmark
-    # ratio held over the window (an approximation); exact for unallocated
-    # goals, where ratio == 1 and the series is unchanged.
-    whole_total = linked_accounts.sum do |account|
-      convert_money(Money.new(account.balance.to_d, account.currency)).amount
-    end
-    # 0 when the linked-account total is non-positive: current_balance is forced
-    # to 0 there, so the saved series must end at 0 too (no stray non-zero tail).
-    #
-    # Capped at 1 because `current_balance` no longer tracks the accounts once a
-    # goal is closed: it returns the amount frozen at completion. Spend those
-    # accounts afterwards and the ratio runs away — a frozen 4,000 over a live
-    # 100 scales every historical point by fifty, drawing a chart that never
-    # happened. The goal's share of its accounts cannot exceed all of them.
-    backing_ratio = whole_total.positive? ? (current_balance.to_d / whole_total) : 0.to_d
-    backing_ratio = 1.to_d if backing_ratio > 1
-    saved_series = series_values.map { |v| { date: v.date.to_s, value: (v.value.amount.to_d * backing_ratio).to_f } }
-
-    earliest = series_values.first&.date || created_at.to_date
+    saved_series, earliest = start_date ? dated_projection_history : projection_history
     target_amt = target_amount.to_d
     proj_end = projection_end_amount
 
@@ -1114,11 +1096,68 @@ class Goal < ApplicationRecord
   end
 
   private
+    def dated_funding
+      @dated_funding ||= DatedFunding.new(accounts: linked_accounts, start_date: start_date)
+    end
+
+    def dated_pace
+      return 0 if dated_funding.pace_days.zero?
+
+      net = linked_accounts.sum do |account|
+        convert_money(Money.new(dated_funding.pace_amount_for(account), account.currency)).amount
+      end
+      (net * 30 / dated_funding.pace_days).round(2)
+    end
+
+    def dated_projection_history
+      series = dated_funding.historical_amounts.map do |date, amounts|
+        value = linked_accounts.sum do |account|
+          amount = backing_share_for(account, amounts.fetch(account.id))
+          convert_money(Money.new(amount, account.currency)).amount
+        end
+        { date: date.to_s, value: value.to_f }
+      end
+      series << { date: Date.current.to_s, value: current_balance.to_f } if series.any?
+      [ series, series.first&.fetch(:date) || [ start_date, Date.current ].min ]
+    end
+
+    def projection_history
+      series_values = balance_series_values
+      # The historical series tracks the whole linked-account balances. Scale it
+      # to this goal's backing so the saved line meets current_balance at "today"
+      # instead of dropping off a cliff for earmarked goals. Assumes the earmark
+      # ratio held over the window (an approximation); exact for unallocated
+      # goals, where ratio == 1 and the series is unchanged.
+      whole_total = linked_accounts.sum do |account|
+        convert_money(Money.new(account.balance.to_d, account.currency)).amount
+      end
+      # 0 when the linked-account total is non-positive: current_balance is forced
+      # to 0 there, so the saved series must end at 0 too (no stray non-zero tail).
+      #
+      # Capped at 1 because `current_balance` no longer tracks the accounts once a
+      # goal is closed: it returns the amount frozen at completion. Spend those
+      # accounts afterwards and the ratio runs away — a frozen 4,000 over a live
+      # 100 scales every historical point by fifty, drawing a chart that never
+      # happened. The goal's share of its accounts cannot exceed all of them.
+      backing_ratio = whole_total.positive? ? (current_balance.to_d / whole_total) : 0.to_d
+      backing_ratio = 1.to_d if backing_ratio > 1
+      saved_series = series_values.map { |v| { date: v.date.to_s, value: (v.value.amount.to_d * backing_ratio).to_f } }
+
+      earliest = series_values.first&.date || created_at.to_date
+      [ saved_series, earliest ]
+    end
+
     # This goal's amount from one linked account under the active progress
     # basis: net contributions (market-gain-excluded, floored at 0) on the
     # contributions basis, or the allocation-aware backing balance otherwise.
-    def account_amount_for(account)
-      base = contributions_basis? ? net_contributed_for(account) : account.balance.to_d
+    def account_amount_for(account, dated: true)
+      base = if dated && start_date
+        dated_funding.amount_for(account)
+      elsif contributions_basis?
+        net_contributed_for(account)
+      else
+        account.balance.to_d
+      end
       backing_share_for(account, base)
     end
 
@@ -1315,7 +1354,7 @@ class Goal < ApplicationRecord
         @remaining_amount @remaining_amount_money
         @progress_percent @monthly_target_amount
         @progress_amount_money @consumed_amount_money
-        @pace @pace_money @status @pooled_allocations @missing_exchange_rate_currencies
+        @pace @pace_money @status @pooled_allocations @missing_exchange_rate_currencies @dated_funding
       ].each do |ivar|
         remove_instance_variable(ivar) if instance_variable_defined?(ivar)
       end

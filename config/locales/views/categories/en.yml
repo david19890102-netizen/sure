@@ -17,6 +17,8 @@ en:
     edit:
       edit: Edit category
     form:
+      budget_book_label: Budget book
+      budget_book_hint: Subcategories use their parent’s budget book.
       placeholder: Category name
       name_label: Name
       unassigned: "(unassigned)"

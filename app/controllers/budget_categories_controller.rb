@@ -5,7 +5,7 @@ class BudgetCategoriesController < ApplicationController
   before_action :ensure_budget_editable!, only: %i[index update move]
 
   def index
-    @budget_categories = @budget.budget_categories.includes(:category)
+    @budget_categories = @budget.book_budget_categories_scope
     render layout: "wizard"
   end
 
@@ -23,10 +23,12 @@ class BudgetCategoriesController < ApplicationController
                                   .where.not(transactions: { kind: Current.family.analytics_excluded_kinds })
 
     if params[:id] == BudgetCategory.uncategorized.id
+      raise ActiveRecord::RecordNotFound unless @budget.includes_uncategorized?
+
       @budget_category = @budget.uncategorized_budget_category
       @recent_transactions = @recent_transactions.where(transactions: { category_id: nil })
     else
-      @budget_category = @budget.budget_categories.find(params[:id])
+      @budget_category = @budget.book_budget_categories_scope.find(params[:id])
       @recent_transactions = @recent_transactions.joins("LEFT JOIN categories ON categories.id = transactions.category_id")
                                                  .where("categories.id = ? OR categories.parent_id = ?", @budget_category.category.id, @budget_category.category.id)
     end
@@ -35,7 +37,7 @@ class BudgetCategoriesController < ApplicationController
   end
 
   def update
-    @budget_category = @budget.budget_categories.find(params[:id])
+    @budget_category = @budget.book_budget_categories_scope.find(params[:id])
     unless rollover_enabled_param.nil?
       @budget_category.update!(rollover_enabled: rollover_enabled_param)
       # A month the user opened before making this choice was created with the
@@ -48,7 +50,7 @@ class BudgetCategoriesController < ApplicationController
     # it here rather than on every transaction change: the budget page is
     # the only place the amount is read, and it always comes through here or
     # through Budget.find_or_bootstrap.
-    Budget::RolloverCalculator.new(family: @budget.family, user: @budget.user).recompute!
+    Budget::RolloverCalculator.new(family: @budget.family, user: @budget.user, book: @budget.book).recompute!
     @budget_category.reload
 
     respond_to do |format|
@@ -56,6 +58,7 @@ class BudgetCategoriesController < ApplicationController
       format.html { redirect_to budget_budget_categories_path(@budget, **budget_owner_query) }
     end
   rescue ActiveRecord::RecordInvalid
+    @budget_categories = @budget.book_budget_categories_scope
     render :index, status: :unprocessable_entity
   end
 
@@ -66,11 +69,11 @@ class BudgetCategoriesController < ApplicationController
   # already established and deadlock two concurrent moves. Once per move —
   # the calculator rereads the whole chain either way.
   def move
-    @from = @budget.budget_categories.find(params[:from_id])
-    @to = @budget.budget_categories.find(params[:to_id])
+    @from = @budget.book_budget_categories_scope.find(params[:from_id])
+    @to = @budget.book_budget_categories_scope.find(params[:to_id])
 
     BudgetCategory.move_allocation!(from: @from, to: @to, amount: move_amount_param)
-    Budget::RolloverCalculator.new(family: @budget.family, user: @budget.user).recompute!
+    Budget::RolloverCalculator.new(family: @budget.family, user: @budget.user, book: @budget.book).recompute!
 
     @budget.reload
     flash.now[:notice] = t(".success")
@@ -83,7 +86,7 @@ class BudgetCategoriesController < ApplicationController
     respond_to do |format|
       format.turbo_stream { render turbo_stream: flash_notification_stream_items, status: :unprocessable_entity }
       format.html do
-        @budget_categories = @budget.budget_categories.includes(:category)
+        @budget_categories = @budget.book_budget_categories_scope
         render :index, layout: "wizard", status: :unprocessable_entity
       end
     end

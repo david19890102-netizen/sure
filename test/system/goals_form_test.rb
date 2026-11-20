@@ -13,6 +13,20 @@ class GoalsFormTest < ApplicationSystemTestCase
     sign_in @user
   end
 
+  test "edits the goal start date and keeps it after reloading" do
+    goal = goals(:vacation_italy)
+    opening = Date.current - 30.days
+    visit edit_goal_path(goal)
+    field = find("input[name='goal[start_date]']")
+    field.execute_script("this.value = arguments[0]; this.dispatchEvent(new Event('change', { bubbles: true }))", opening.iso8601)
+    click_button I18n.t("goals.form.save")
+
+    assert_current_path goal_path(goal)
+    assert_equal opening, goal.reload.start_date
+    visit edit_goal_path(goal)
+    assert_field "goal_start_date", with: opening.iso8601
+  end
+
   test "the required asterisk survives the label swap" do
     visit new_goal_path
 

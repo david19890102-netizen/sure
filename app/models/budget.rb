@@ -4,6 +4,7 @@ class Budget < ApplicationRecord
   PARAM_DATE_FORMAT = "%b-%Y"
 
   attr_accessor :current_user
+  attr_writer :include_all_categories
 
   # Overrides the account scope `income_statement` would otherwise infer.
   # Budget::RolloverCalculator sets it on the household chain: the carry it
@@ -14,10 +15,11 @@ class Budget < ApplicationRecord
   belongs_to :family
   belongs_to :user, optional: true
 
-  has_many :budget_categories, -> { includes(:category) }, dependent: :destroy, inverse_of: :budget
+  has_many :budget_categories, -> { includes(category: :parent) }, dependent: :destroy, inverse_of: :budget
 
   validates :start_date, :end_date, presence: true
-  validates :start_date, :end_date, uniqueness: { scope: [ :family_id, :user_id ] }
+  validates :start_date, :end_date, uniqueness: { scope: [ :family_id, :user_id, :book ] }
+  validates :book, inclusion: { in: Category::BUDGET_BOOKS }
 
   monetize :available_cash, :earmarked_for_goals, :free_cash
   monetize :budgeted_spending, :allocated_spending,
@@ -62,7 +64,7 @@ class Budget < ApplicationRecord
     #
     # Returns nil if the household budget was explicitly requested but the
     # family opted out of it via `household_budget_enabled?`.
-    def find_or_bootstrap(family, start_date:, user: nil, household: false)
+    def find_or_bootstrap(family, start_date:, user: nil, household: false, book: "personal", include_all_categories: false)
       return nil unless budget_date_valid?(start_date, family: family)
       return nil if household && family.personal_budgets? && !family.household_budget_enabled?
 
@@ -75,15 +77,17 @@ class Budget < ApplicationRecord
           family: family,
           start_date: budget_start,
           end_date: budget_end,
-          user: owner
+          user: owner,
+          book: book
         ) do |b|
           b.currency = family.currency
         end
 
         budget.current_user = user
+        budget.include_all_categories = include_all_categories
         budget.sync_budget_categories
 
-        Budget::RolloverCalculator.new(family: family, user: owner).recompute!
+        Budget::RolloverCalculator.new(family: family, user: owner, book: book).recompute!
 
         budget
       end
@@ -113,17 +117,33 @@ class Budget < ApplicationRecord
     self.class.date_to_param(start_date)
   end
 
-  def sync_budget_categories
-    # Category changes can leave the association memoized before this sync runs.
-    current_categories_by_id = family.categories.reload.index_by(&:id)
-    current_category_ids = current_categories_by_id.keys.to_set
-    existing_budget_category_ids = budget_categories.pluck(:category_id).to_set
-    categories_to_add = current_category_ids - existing_budget_category_ids
-    categories_to_remove = existing_budget_category_ids - current_category_ids
+  def categories_for_book
+    return family.categories if @include_all_categories
 
-    # Create missing categories
+    family.categories.in_budget_book(book)
+  end
+
+  def book_budget_categories
+    return budget_categories.to_a if @include_all_categories
+
+    budget_categories.select { |envelope| envelope.category.effective_budget_book == book }
+  end
+
+  def book_budget_categories_scope
+    budget_categories.where(category_id: categories_for_book.select(:id))
+  end
+
+  def includes_uncategorized?
+    book == "personal"
+  end
+
+  def sync_budget_categories
+    current_categories_by_id = categories_for_book.index_by(&:id)
+    categories_to_add = current_categories_by_id.keys - budget_categories.pluck(:category_id)
     inherited_rollover = inherited_rollover_flags(categories_to_add)
 
+    # Keep allocations stored in their original book when a category moves.
+    # The other book starts independently and a later move back restores them.
     categories_to_add.each do |category_id|
       budget_categories.create!(
         category: current_categories_by_id.fetch(category_id),
@@ -132,9 +152,6 @@ class Budget < ApplicationRecord
         rollover_enabled: inherited_rollover.fetch(category_id, false)
       )
     end
-
-    # Remove old categories
-    budget_categories.where(category_id: categories_to_remove).destroy_all if categories_to_remove.any?
   end
 
   # Rollover is a standing choice about an envelope, not about one month: a
@@ -175,7 +192,9 @@ class Budget < ApplicationRecord
       scope = scope.joins(:entry).where(entries: { account_id: family.accounts.accessible_by(current_user).included_in_reports.select(:id) })
     end
 
-    scope
+    return scope if @include_all_categories
+
+    Category.filter_budget_transactions(scope, family: family, book: book)
   end
 
   # --- Cash on hand, next to the plan ---
@@ -235,7 +254,7 @@ class Budget < ApplicationRecord
         # a USD budget would read 1,200 available, 1,000 earmarked and 200
         # free, when none of it is free.
         Goal.prepared_for(family, scope: family.goals.where.not(state: Goal::RELEASED_STATES))
-            .sum { |goal| goal.backing_within(ids, currency: currency) }
+            .sum { |goal| goal.backing_within(ids, currency: currency, dated: false) }
       end
     end
   end
@@ -285,11 +304,11 @@ class Budget < ApplicationRecord
   end
 
   def most_recent_initialized_budget
-    family.budgets
+    family.budget_books
       .includes(:budget_categories)
       .where("start_date < ?", start_date)
       .where.not(budgeted_spending: nil)
-      .where(user_id: user_id)
+      .where(user_id: user_id, book: book)
       .order(start_date: :desc)
       .first
   end
@@ -297,6 +316,7 @@ class Budget < ApplicationRecord
   def copy_from!(source_budget)
     raise ArgumentError, "source budget must belong to the same family" unless source_budget.family_id == family_id
     raise ArgumentError, "source budget must belong to the same user" unless source_budget.user_id == user_id
+    raise ArgumentError, "source budget must belong to the same book" unless source_budget.book == book
     raise ArgumentError, "source budget must precede target budget" unless source_budget.start_date < start_date
 
     Budget.transaction do
@@ -305,9 +325,9 @@ class Budget < ApplicationRecord
         expected_income: source_budget.expected_income
       )
 
-      target_by_category = budget_categories.index_by(&:category_id)
+      target_by_category = book_budget_categories.index_by(&:category_id)
 
-      source_budget.budget_categories.each do |source_bc|
+      source_budget.book_budget_categories.each do |source_bc|
         target_bc = target_by_category[source_bc.category_id]
         next unless target_bc
 
@@ -322,7 +342,7 @@ class Budget < ApplicationRecord
       # Copying the toggle changes what the chain should hold, and this runs
       # after find_or_bootstrap already recomputed it. Recompute again so the
       # target doesn't sit on a zero carry until the next page load.
-      Budget::RolloverCalculator.new(family: family, user: user).recompute!
+      Budget::RolloverCalculator.new(family: family, user: user, book: book).recompute!
     end
   end
 
@@ -355,7 +375,7 @@ class Budget < ApplicationRecord
   # lands. Categories with neither spend nor an allocation are noise in a
   # summary. (The budget_categories association preloads :category.)
   def top_spending_categories(limit: 4)
-    budget_categories
+    book_budget_categories
       .reject(&:subcategory?)
       .reject { |bc| bc.actual_spending.to_d.zero? && bc.budgeted_spending.to_d.zero? }
       .sort_by { |bc| [ -bc.actual_spending.to_d, -bc.budgeted_spending.to_d ] }
@@ -394,10 +414,10 @@ class Budget < ApplicationRecord
   end
 
   def donut_budget_categories
-    categories = budget_categories.reject(&:subcategory?).to_a
+    categories = book_budget_categories.reject(&:subcategory?)
     uncategorized = uncategorized_budget_category
 
-    if budget_category_actual_spending(uncategorized).positive?
+    if includes_uncategorized? && budget_category_actual_spending(uncategorized).positive?
       categories << uncategorized
     end
 
@@ -477,7 +497,7 @@ class Budget < ApplicationRecord
   # Budget allocations: How much user has budgeted for all parent categories combined
   # =============================================================================
   def allocated_spending
-    budget_categories.reject { |bc| bc.subcategory? }.sum(&:budgeted_spending)
+    book_budget_categories.reject { |bc| bc.subcategory? }.sum(&:budgeted_spending)
   end
 
   def allocated_percent
@@ -496,7 +516,7 @@ class Budget < ApplicationRecord
   # carry their own surplus and their parent's is net of theirs, so summing
   # every non-inheriting category counts each amount once.
   def total_rolled_over
-    budget_categories.reject(&:inherits_parent_budget?).sum(&:rolled_over_amount)
+    book_budget_categories.reject(&:inherits_parent_budget?).sum(&:rolled_over_amount)
   end
 
   def allocations_valid?
@@ -550,7 +570,7 @@ class Budget < ApplicationRecord
       0.to_d
     end
     def income_statement
-      @income_statement ||= family.income_statement(user: current_user, accounts: income_statement_accounts)
+      @income_statement ||= family.income_statement(user: current_user, accounts: income_statement_accounts, budget_book: (@include_all_categories ? nil : book))
     end
 
     # nil for the household budget (IncomeStatement falls back to whatever

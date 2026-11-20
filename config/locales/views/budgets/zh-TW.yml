@@ -1,6 +1,10 @@
 ---
 zh-TW:
   budgets:
+    books:
+      label: 預算帳本
+      personal: 個人
+      family: 家人
     budget_donut:
       spent: 已支出
       new_budget: 新增預算

@@ -1,6 +1,10 @@
 ---
 en:
   budgets:
+    books:
+      label: Budget book
+      personal: Personal
+      family: Family
     switcher:
       aria_label: "Switch budget"
       household: "Household"

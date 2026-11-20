@@ -51,6 +51,15 @@
 
 <% if @switch_options.present? && @switch_options.size > 1 %>
   <div class="mb-4">
-    <%= render "budgets/owner_switcher", switch_options: @switch_options, switch_path: ->(owner_param) { budget_path(budget.to_param, owner: owner_param) } %>
+    <%= render "budgets/owner_switcher", switch_options: @switch_options, switch_path: ->(owner_param) { budget_path(budget.to_param, **budget_owner_query.merge(owner: owner_param)) } %>
   </div>
 <% end %>
+
+<div class="mb-4">
+  <%= render DS::SegmentedControl.new(full_width: true, aria_label: t("budgets.books.label"), class: "bg-surface-inset") do |control| %>
+    <% Category::BUDGET_BOOKS.each do |book| %>
+      <% control.with_segment t("budgets.books.#{book}"), active: budget.book == book,
+          href: budget_path(budget, **budget_owner_query.merge(book: book)) %>
+    <% end %>
+  <% end %>
+</div>

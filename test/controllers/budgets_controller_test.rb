@@ -13,6 +13,33 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to budget_path(Budget.date_to_param(Date.current))
   end
 
+  test "updates the family month independently and keeps the book in navigation" do
+    personal = budgets(:one)
+    personal.update!(expected_income: 1_000, budgeted_spending: 700)
+    family_category = @user.family.categories.create!(name: "Test family envelope", budget_book: "family")
+
+    get budget_path(personal, book: "family")
+    assert_response :success
+    assert_select "[role=group][aria-label='Budget book'] a[aria-current=true]", text: "Family"
+
+    patch budget_path(personal, book: "family"), params: { budget: { expected_income: 500, budgeted_spending: 400 } }
+    assert_redirected_to budget_budget_categories_path(personal, book: "family")
+    follow_redirect!
+    assert_response :success
+
+    family = @user.family.budget_books.find_by!(start_date: personal.start_date, book: "family")
+    envelope = family.book_budget_categories_scope.find_by!(category: family_category)
+    patch budget_budget_category_path(family, envelope, book: "family"), params: { budget_category: { budgeted_spending: 120 } }
+
+    assert_redirected_to budget_budget_categories_path(family, book: "family")
+    assert_equal 120, envelope.reload.budgeted_spending
+    assert_equal 280, family.reload.available_to_allocate
+    assert_equal 700, personal.reload.budgeted_spending
+    assert_equal 1_000, personal.expected_income
+    get budget_budget_category_path(personal, envelope)
+    assert_response :not_found
+  end
+
   test "show renders the budget page" do
     get budget_url(Budget.date_to_param(Date.current))
 

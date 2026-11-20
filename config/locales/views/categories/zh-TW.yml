@@ -13,6 +13,8 @@ zh-TW:
     edit:
       edit: 編輯分類
     form:
+      budget_book_label: 預算歸屬
+      budget_book_hint: 子分類的預算歸屬以上層分類為準。
       placeholder: 分類名稱
       name_label: 名稱
       unassigned: （未指定）

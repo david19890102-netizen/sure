@@ -13,6 +13,7 @@ export default class extends Controller {
     "nameInput",
     "amountInput",
     "dateInput",
+    "startDateInput",
     "avatarPreview",
     "nameError",
     "amountError",
@@ -25,6 +26,7 @@ export default class extends Controller {
   static INVALID_INPUT_CLASSES = ["ring-2", "ring-destructive", "border-destructive"];
 
   static values = {
+    funded: Number,
     currency: { type: String, default: "USD" },
     suggestedWithDate: { type: String, default: "Save {monthly}/mo across {accounts} to hit it on time." },
     suggestedNoDate: { type: String, default: "Set a target date to project a finish line." },
@@ -155,8 +157,12 @@ export default class extends Controller {
     const dateValue = this.hasDateInputTarget ? this.dateInputTarget.value : null;
     const checkedCount = this.linkedAccountCheckboxTargets.filter((cb) => cb.checked).length;
 
+    const start = this.hasStartDateInputTarget ? this.startDateInputTarget : null;
+    const waitingForBaseline = start?.value &&
+      (start.value !== start.defaultValue ||
+        this.linkedAccountCheckboxTargets.some((cb) => cb.checked !== cb.defaultChecked));
     const amountValid = Number.isFinite(amount) && amount > 0;
-    if (!amountValid || checkedCount === 0) {
+    if (!amountValid || checkedCount === 0 || waitingForBaseline) {
       this.suggestedTarget.classList.add("hidden");
       this.suggestedTarget.textContent = "";
       return;
@@ -164,13 +170,16 @@ export default class extends Controller {
 
     let text;
     if (dateValue) {
-      const months = this.#monthsBetween(new Date(), new Date(dateValue));
+      const today = new Date();
+      const begins = start?.value ? new Date(start.value) : today;
+      const months = this.#monthsBetween(begins > today ? begins : today, new Date(dateValue));
       if (months <= 0) {
         this.suggestedTarget.classList.add("hidden");
         this.suggestedTarget.textContent = "";
         return;
       }
-      const perMonth = Math.ceil(amount / months);
+      const remaining = start?.value ? Math.max(amount - this.fundedValue, 0) : amount;
+      const perMonth = Math.ceil(remaining / months);
       const accountLabel = `${checkedCount} ${checkedCount === 1 ? "account" : "accounts"}`;
       text = this.suggestedWithDateValue
         .replace("{monthly}", this.#money(perMonth))

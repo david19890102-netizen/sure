@@ -340,6 +340,8 @@ en:
         target_balance_pending: "Worked out when you save"
         target_balance_hint: "From your median monthly spending over the months above. Refreshed each month."
         target_date: Target date
+        start_date: Start date (optional)
+        start_date_hint: Uses the closing balance on this date as the baseline. Investment and crypto market changes are excluded. Accounts with no opening record are left out unless opened after this date.
         color: Color
         notes: Notes (optional)
         notes_placeholder: A reminder for future you…

@@ -70,6 +70,19 @@ class Api::V1::BudgetCategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_not budget_category.key?("rolled_over_amount_cents")
   end
 
+  test "keeps family book allocations outside the personal budget API" do
+    category = @family.categories.create!(name: "Test family allocation", budget_book: "family")
+    budget = Budget.find_or_bootstrap(@family, start_date: @budget.start_date, book: "family")
+    allocation = budget.book_budget_categories_scope.find_by!(category: category)
+
+    get api_v1_budget_categories_url, headers: api_headers(@api_key)
+    assert_response :success
+    assert_not_includes JSON.parse(response.body).fetch("budget_categories").pluck("id"), allocation.id
+
+    get api_v1_budget_category_url(allocation), headers: api_headers(@api_key)
+    assert_response :not_found
+  end
+
   test "shows a budget category" do
     get api_v1_budget_category_url(@budget_category), headers: api_headers(@api_key)
 

@@ -31,8 +31,13 @@ module BudgetOwnership
       Current.user
     end
 
+    def requested_budget_book
+      params[:book] == "family" ? "family" : "personal"
+    end
+
     def resolve_budget(start_date)
       target_user = budget_target_user
+      book = requested_budget_book
 
       if target_user != Current.user
         # Viewing another family member's shared budget: resolve an existing
@@ -42,17 +47,21 @@ module BudgetOwnership
         # the owner hasn't set one up yet, same as the household fallback
         # below, so shared-budget navigation doesn't dead-end.
         budget_start, budget_end = Budget.period_for(start_date, family: Current.family)
-        existing = Current.family.budgets.find_by(start_date: budget_start, end_date: budget_end, user: target_user)
-        return existing if existing
+        existing = Current.family.budget_books.find_by(start_date: budget_start, end_date: budget_end, user: target_user, book: book)
+        if existing
+          existing.current_user = Current.user
+          return existing
+        end
 
-        return Budget.find_or_bootstrap(Current.family, start_date: start_date, user: Current.user, household: false)
+        return Budget.find_or_bootstrap(Current.family, start_date: start_date, user: Current.user, household: false, book: book)
       end
 
       budget = Budget.find_or_bootstrap(
         Current.family,
         start_date: start_date,
         user: target_user,
-        household: viewing_household_budget?
+        household: viewing_household_budget?,
+        book: book
       )
 
       return budget if budget || !viewing_household_budget?
@@ -60,7 +69,7 @@ module BudgetOwnership
       # Household budget was explicitly requested but the family disabled it
       # (stale link, bookmarked URL) — fall back to the viewer's own budget
       # rather than a hard 404.
-      Budget.find_or_bootstrap(Current.family, start_date: start_date, user: Current.user, household: false)
+      Budget.find_or_bootstrap(Current.family, start_date: start_date, user: Current.user, household: false, book: book)
     end
 
     def ensure_budget_editable!

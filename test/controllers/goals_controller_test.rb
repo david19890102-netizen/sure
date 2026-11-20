@@ -39,6 +39,20 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     assert_match(@goal.name, response.body)
   end
 
+  test "updates and clears the optional goal start date" do
+    date = Date.current - 10.days
+    patch goal_path(@goal), params: { goal: { start_date: date.iso8601 } }
+    assert_redirected_to goal_path(@goal)
+    assert_equal date, @goal.reload.start_date
+
+    get edit_goal_path(@goal)
+    assert_response :success
+    assert_select "input[type=date][name='goal[start_date]'][value=?]", date.iso8601
+
+    patch goal_path(@goal), params: { goal: { start_date: "" } }
+    assert_nil @goal.reload.start_date
+  end
+
   test "new renders the modal form" do
     get new_goal_url
     assert_response :success

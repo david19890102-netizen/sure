@@ -15,7 +15,7 @@
     </div>
 
     <div class="mx-auto max-w-lg">
-      <% if @budget.family.categories.empty? %>
+      <% if @budget_categories.empty? %>
         <div class="bg-container shadow-border-xs rounded-lg p-4">
           <%= render "budget_categories/no_categories" %>
         </div>
@@ -42,7 +42,7 @@
               </div>
             <% end %>
 
-            <%= render "budget_categories/uncategorized_budget_category_form", budget: @budget %>
+            <%= render "budget_categories/uncategorized_budget_category_form", budget: @budget if @budget.includes_uncategorized? %>
           </div>
 
           <%= render "budget_categories/confirm_button", budget: @budget %>

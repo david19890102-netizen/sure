@@ -176,7 +176,7 @@ class BudgetCategory < ApplicationRecord
     later = BudgetCategory
       .joins(:budget)
       .where(category_id: category_id)
-      .where(budgets: { family_id: budget.family_id, user_id: budget.user_id })
+      .where(budgets: { family_id: budget.family_id, user_id: budget.user_id, book: budget.book })
       .where("budgets.start_date > ?", budget.start_date)
       .where.not(rollover_enabled: rollover_enabled)
 
@@ -253,7 +253,7 @@ class BudgetCategory < ApplicationRecord
   # Returns the parent budget category if this is a subcategory
   def parent_budget_category
     return nil unless subcategory?
-    @parent_budget_category ||= budget.budget_categories.find { |bc| bc.category.id == category.parent_id }
+    @parent_budget_category ||= budget.book_budget_categories.find { |bc| bc.category.id == category.parent_id }
   end
 
   def available_to_spend
@@ -403,14 +403,14 @@ class BudgetCategory < ApplicationRecord
   end
 
   def siblings
-    budget.budget_categories.select { |bc| bc.category.parent_id == category.parent_id && bc.id != id }
+    budget.book_budget_categories.select { |bc| bc.category.parent_id == category.parent_id && bc.id != id }
   end
 
   def subcategories
     return [] unless category.parent_id.nil?
     return [] if category.id.nil?
 
-    budget.budget_categories.select { |bc| bc.category.parent_id == category.id }
+    budget.book_budget_categories.select { |bc| bc.category.parent_id == category.id }
   end
 
   private
