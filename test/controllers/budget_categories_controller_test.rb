@@ -51,6 +51,26 @@ class BudgetCategoriesControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
+  test "shows history from report-hidden accounts only for the family child envelope" do
+    @electric_category.update!(budget_book: "family")
+    account = accounts(:depository)
+    account.update!(exclude_from_reports: true)
+    account.entries.create!(date: @budget.start_date, amount: 73, currency: "USD",
+      name: "Hidden account family expense", entryable: Transaction.new(category: @electric_category))
+    account.entries.create!(date: @budget.start_date, amount: 61, currency: "USD", excluded: true,
+      name: "Excluded family expense", entryable: Transaction.new(category: @electric_category))
+
+    family_book = Budget.find_or_bootstrap(@family, start_date: @budget.start_date, book: "family")
+    child = family_book.book_budget_categories_scope.find_by!(category: @electric_category)
+    get budget_budget_category_path(family_book, child, book: "family")
+    assert_response :success
+    assert_includes response.body, "Hidden account family expense"
+    assert_not_includes response.body, "Excluded family expense"
+
+    get budget_budget_category_path(@budget, @electric_budget_category)
+    assert_response :not_found
+  end
+
   test "index marks budget form values as privacy-sensitive" do
     parent_form_selector = "##{dom_id(@parent_budget_category, :form)}"
     uncategorized_form_selector = "##{dom_id(@budget, :uncategorized_budget_category_form)}"

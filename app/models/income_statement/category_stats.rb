@@ -53,7 +53,7 @@ class IncomeStatement::CategoryStats
           WHERE a.family_id = :family_id
             AND t.kind NOT IN (#{budget_excluded_kinds_sql})
             AND ae.excluded = false
-            AND a.exclude_from_reports = false
+            #{exclude_report_hidden_accounts_sql}
             #{pending_providers_sql}
             #{exclude_tax_advantaged_sql}
             #{scope_to_account_ids_sql}

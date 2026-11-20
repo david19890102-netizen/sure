@@ -14,6 +14,7 @@ export default class extends Controller {
     "icon",
     "validationMessage",
     "selection",
+    "budgetBook",
     "colorPickerRadioBtn",
     "popup",
   ];
@@ -170,6 +171,13 @@ export default class extends Controller {
     const display =
       typeof parent === "string" && parent !== "" ? "none" : "flex";
     this.selectionTarget.style.display = display;
+
+    if (this.hasBudgetBookTarget) {
+      const select = this.budgetBookTarget;
+      select.querySelector('option[value=""]').text = parent
+        ? select.dataset.inheritedLabel
+        : select.dataset.defaultLabel;
+    }
   }
 
   backgroundColor([r, g, b, a], percentage) {

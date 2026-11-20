@@ -8,6 +8,24 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     ensure_tailwind_build
   end
 
+  test "edits a child override and restores parent inheritance with a blank choice" do
+    parent = @family.categories.create!(name: "Test family parent", budget_book: "family")
+    child = @family.categories.create!(name: "Test child override", parent: parent)
+
+    get edit_category_path(child)
+    assert_response :success
+    assert_select "select#category_budget_book option", text: "Follow parent category"
+
+    patch category_path(child), params: { category: { budget_book: "personal" } }
+    assert_response :redirect
+    assert_equal "personal", child.reload.effective_budget_book
+
+    patch category_path(child), params: { category: { budget_book: "" } }
+    assert_response :redirect
+    assert_nil child.reload.budget_book
+    assert_equal "family", child.effective_budget_book
+  end
+
   test "index" do
     get categories_url
     assert_response :success

@@ -90,6 +90,10 @@ module IncomeStatement::ScopedTransactionsQuery
       ActiveRecord::Base.sanitize_sql([ "AND a.id IN (?)", @account_ids ])
     end
 
+    def exclude_report_hidden_accounts_sql
+      @budget_book == "family" ? "" : "AND a.exclude_from_reports = false"
+    end
+
     def scope_to_budget_book_sql
       return "" unless @budget_book
 

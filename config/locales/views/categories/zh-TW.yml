@@ -14,7 +14,9 @@ zh-TW:
       edit: 編輯分類
     form:
       budget_book_label: 預算歸屬
-      budget_book_hint: 子分類的預算歸屬以上層分類為準。
+      budget_book_inherit: 跟父分類
+      budget_book_default: 個人（預設）
+      budget_book_hint: 子分類可跟父分類，或單獨指定預算歸屬。
       placeholder: 分類名稱
       name_label: 名稱
       unassigned: （未指定）
