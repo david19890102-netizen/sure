@@ -140,6 +140,15 @@ en:
         percent: Percent
         amount: Amount
     net_worth:
+      chart_period: Net worth period
+      chart_periods:
+        month: Last month
+        year: This year
+        all: All
+      chart_changes:
+        month: Change over the last month
+        year: Change this year
+        all: Change since the beginning
       title: Net Worth
       current_net_worth: Current Net Worth
       period_change: Period Change

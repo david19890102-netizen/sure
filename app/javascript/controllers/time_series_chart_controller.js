@@ -7,6 +7,7 @@ const parseLocalDate = d3.timeParse("%Y-%m-%d");
 export default class extends Controller {
   static values = {
     data: Object,
+    locale: String,
     strokeWidth: { type: Number, default: 2 },
     useLabels: { type: Boolean, default: true },
     useTooltip: { type: Boolean, default: true },
@@ -228,6 +229,9 @@ export default class extends Controller {
   }
 
   _drawXAxisLabels() {
+    const formatDate = this.hasLocaleValue
+      ? new Intl.DateTimeFormat(this.localeValue, { dateStyle: "medium" }).format
+      : d3.timeFormat("%b %d, %Y");
     // Add ticks
     this._d3Group
       .append("g")
@@ -240,7 +244,7 @@ export default class extends Controller {
             this._normalDataPoints[this._normalDataPoints.length - 1].date,
           ])
           .tickSize(0)
-          .tickFormat(d3.timeFormat("%b %d, %Y")),
+          .tickFormat(formatDate),
       )
       .select(".domain")
       .remove();

@@ -17,18 +17,19 @@ class Portfolio::SectionRegistry
   # The built-in section keys, in declaration order. The preferences
   # endpoint accepts only these, so a saved order or collapsed set cannot
   # carry arbitrary strings into the user's preferences.
-  KEYS = %w[accounts].freeze
+  KEYS = %w[stock_assets accounts].freeze
 
   attr_reader :statement, :period, :as_of, :user, :extra_sections
 
   # `extra_sections` are appended after the built-ins, in the order given. It
   # is the seam that keeps this list open: a section can be added (or a test
   # can add one) without editing the built-in list.
-  def initialize(statement:, period:, as_of:, user:, extra_sections: [])
+  def initialize(statement:, period:, as_of:, user:, stock_range: nil, stock_mode: nil, extra_sections: [])
     @statement = statement
     @period = period
     @as_of = as_of
     @user = user
+    @stock_assets = Portfolio::StockAssets.new(statement: statement, as_of: as_of, range: stock_range, mode: stock_mode)
     @extra_sections = extra_sections || []
   end
 
@@ -64,6 +65,14 @@ class Portfolio::SectionRegistry
   private
     def built_in_sections
       [
+        {
+          key: "stock_assets",
+          title: "portfolios.sections.stock_assets",
+          partial: "portfolios/stock_assets",
+          locals: { stock_assets: @stock_assets },
+          visible: true,
+          collapsible: true
+        },
         {
           key: "accounts",
           title: "portfolios.sections.accounts",

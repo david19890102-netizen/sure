@@ -1,0 +1,75 @@
+<div id="transaction-search-filters" class="mb-4 min-w-0 space-y-2 lg:flex lg:flex-wrap lg:items-center lg:gap-2 lg:space-y-0">
+  <% if transaction_account_filter_active? || @q[:start_date].present? || @q[:end_date].present? %>
+    <ul class="flex items-center gap-2 overflow-x-auto whitespace-nowrap lg:flex-wrap lg:overflow-visible">
+      <% if transaction_account_filter_active? %>
+        <li class="shrink-0">
+          <%= render DS::Popover.new(variant: "button", mobile_fullwidth: true) do |popover| %>
+            <% popover.with_button(type: "button", variant: "outline", size: :sm, icon: "layers",
+                  text: t(".accounts", count: selected_transaction_filter_accounts.size)) %>
+            <% popover.with_custom_content do %>
+              <%= form_with url: transactions_path, scope: :q, method: :get, id: "transaction-account-summary" do |form| %>
+                <%= hidden_field_tag :filter_cleared, "1", id: nil %>
+                <%= hidden_field_tag :locale, request.query_parameters["locale"], id: nil if request.query_parameters["locale"].present? %>
+                <%= hidden_field_tag :per_page, params[:per_page], id: nil %>
+                <% @q.except(:accounts, :account_ids).each do |name, values| %>
+                  <% Array(values).each do |value| %>
+                    <%= hidden_field_tag "q[#{name}]#{'[]' if values.is_a?(Array)}", value, id: nil %>
+                  <% end %>
+                <% end %>
+                <div class="max-h-[50vh] w-full sm:w-80 overflow-y-auto p-3">
+                  <%= render "transactions/searches/filters/account_filter", form: form, id_prefix: "transaction-account-summary" %>
+                </div>
+                <div class="flex justify-end border-t border-secondary p-2">
+                  <%= render DS::Button.new(text: t("transactions.searches.menu.apply"), type: :submit, size: :sm, variant: :outline) %>
+                </div>
+              <% end %>
+            <% end %>
+          <% end %>
+        </li>
+      <% end %>
+      <% if @q[:start_date].present? || @q[:end_date].present? %>
+        <li class="shrink-0">
+          <%= render DS::Link.new(text: transaction_filter_date_label, icon: "calendar", variant: "outline", size: :sm,
+                aria: { label: t(".remove_dates", range: transaction_filter_date_label) },
+                href: transactions_path(q: @q.except(:start_date, :end_date), per_page: params[:per_page], filter_cleared: "1", locale: request.query_parameters["locale"])) %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <div class="flex min-w-0 flex-wrap items-center gap-2 max-lg:flex-nowrap">
+    <% primary = @q.slice(:types, :status, :search) %>
+    <% if primary.any? %>
+      <ul class="flex min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap lg:flex-wrap lg:overflow-visible">
+        <% primary.each do |param_key, values| %>
+          <% Array(values).each do |value| %>
+            <%= render "transactions/searches/filters/badge", param_key: param_key, param_value: value %>
+          <% end %>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <% extra = @q.except(:accounts, :account_ids, :start_date, :end_date, :types, :status, :search, :amount_operator) %>
+    <% if extra.any? %>
+      <div class="shrink-0">
+        <%= render DS::Popover.new(variant: "button") do |popover| %>
+          <% popover.with_button(id: "transaction-more-filters-button", type: "button", variant: "outline", size: :sm, icon: "list-filter",
+                text: t(".more", count: extra.values.sum { |value| Array(value).size })) %>
+          <% popover.with_custom_content do %>
+            <ul class="flex max-h-80 flex-wrap items-center gap-2 overflow-y-auto p-2">
+              <% extra.each do |param_key, values| %>
+                <% Array(values).each do |value| %>
+                  <% value = "#{transaction_amount_operator_label(@q[:amount_operator])} #{value}" if param_key == "amount" %>
+                  <%= render "transactions/searches/filters/badge", param_key: param_key, param_value: value %>
+                <% end %>
+              <% end %>
+            </ul>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%= render DS::Link.new(text: t(".clear_all"), variant: "ghost", icon: "x", size: :sm, class: "shrink-0 whitespace-nowrap",
+          href: transactions_path(clear_filters: true, per_page: params[:per_page], locale: request.query_parameters["locale"])) %>
+  </div>
+</div>

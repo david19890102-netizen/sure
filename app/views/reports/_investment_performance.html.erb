@@ -71,6 +71,11 @@
     </div>
 
     <%# Top Holdings Table %>
+    <% if preview_features_enabled? %>
+      <%= render DS::Link.new(text: t("portfolios.stock_assets.open"), href: portfolio_path(anchor: "portfolio-stock-assets"),
+            variant: "outline", size: :sm, icon: "chart-pie") %>
+    <% end %>
+
     <% if investment_metrics[:top_holdings].any? %>
       <div class="space-y-3">
         <h4 class="text-lg font-medium"><%= t("reports.investment_performance.top_holdings") %></h4>

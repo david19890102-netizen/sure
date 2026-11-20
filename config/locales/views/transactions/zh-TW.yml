@@ -278,8 +278,26 @@ zh-TW:
         conversion_failed: 轉換交易失敗：%{error}
         unexpected_error: 轉換過程中發生非預期的錯誤：%{error}
     searches:
+      summary:
+        accounts:
+          other: "帳戶：%{count} 個"
+        clear_all: 全部清除
+        date_range: "%{from} ~ %{to}"
+        more: "更多篩選（%{count}）"
+        remove_dates: "清除日期區間 %{range}"
       filters:
         account_filter:
+          groups:
+            bank: 銀・銀行
+            card: 卡・信用卡
+            brokerage: 證・證券
+            foreign: 外・外幣
+            cash: 現・現金
+            loan: 貸・貸款
+            property: 房・房地產
+            digital: 加・加密資產
+            crypto: 幣・加密貨幣
+            other: 其他
           filter_accounts: 篩選帳戶
         category_filter:
           filter_category: 篩選分類

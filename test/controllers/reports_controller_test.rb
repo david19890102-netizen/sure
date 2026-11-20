@@ -9,15 +9,15 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     @family = @user.family
   end
 
-  test "the net worth change curve leads until an order is saved, and the display mode is remembered" do
+  test "the combined net worth curve leads by default and remembers the display mode" do
     get reports_path
 
     assert_response :success
     keys = css_select("[data-section-key]").map { |node| node["data-section-key"] }
-    assert_equal "net_worth_change", keys.first
-    assert_equal "net_worth", keys.second
-    assert_select "[data-sortable-list-id=net_worth_change] span.cursor-grab"
-    assert_select "#reportsNetWorthChangeChart, #reports-net-worth-change-empty"
+    assert_equal "net_worth", keys.first
+    assert_not_includes keys, "net_worth_change"
+    assert_select "[data-sortable-list-id=net_worth] span.cursor-grab"
+    assert_select "#reportsNetWorthChart, #reports-net-worth-change-empty"
 
     get reports_path(net_worth_change: "amount")
 
@@ -31,7 +31,7 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
 
   test "renders sections in the order and collapse state stored under the reports keys" do
     @user.update_columns(preferences: (@user.preferences || {}).merge(
-      "reports_section_order" => %w[transactions_breakdown trends_insights],
+      "reports_section_order" => %w[net_worth_change transactions_breakdown net_worth trends_insights],
       "reports_collapsed_sections" => { "trends_insights" => true }
     ))
 
@@ -39,11 +39,26 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     keys = css_select("[data-section-key]").map { |node| node["data-section-key"] }
-    assert_equal %w[net_worth_change transactions_breakdown trends_insights], keys.first(3)
+    assert_equal %w[transactions_breakdown net_worth trends_insights], keys.first(3)
     assert_select "[data-section-key=trends_insights][data-reports-section-collapsed-value=?]", "true"
     assert_select "[data-section-key=transactions_breakdown][data-reports-section-collapsed-value=?]", "false"
     assert_select "[data-section-key=trends_insights] > details:not([open])"
     assert_select "[data-section-key=transactions_breakdown] > details[open]"
+  end
+
+  test "keeps the position of a legacy change curve if net worth was absent" do
+    @user.update_columns(preferences: (@user.preferences || {}).merge(
+      "reports_section_order" => %w[transactions_breakdown net_worth_change trends_insights],
+      "reports_collapsed_sections" => { "net_worth_change" => true }
+    ))
+
+    get reports_path(net_worth_period: "year", net_worth_change: "amount")
+
+    assert_response :success
+    keys = css_select("[data-section-key]").map { |node| node["data-section-key"] }
+    assert_equal %w[transactions_breakdown net_worth trends_insights], keys.first(3)
+    assert_select "[data-section-key=net_worth][data-reports-section-collapsed-value=?]", "true"
+    assert_select "a[href*='net_worth_period=year'][href*='net_worth_change=amount']"
   end
 
   # Reports renders the shared section list with its own endpoint, param and

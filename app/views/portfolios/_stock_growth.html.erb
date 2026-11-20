@@ -1,0 +1,66 @@
+<%# locals: (stock_assets:) %>
+<% mode = stock_assets.mode %>
+<% rows = stock_assets.monthly_changes %>
+<% stats = stock_assets.growth_statistics %>
+<% links = request.query_parameters.slice("locale") %>
+<div class="space-y-4 border-t border-secondary pt-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h3 class="font-medium"><%= t(".title") %></h3>
+    <div class="flex flex-wrap items-center gap-2">
+      <%= render DS::SegmentedControl.new(aria_label: t(".mode")) do |control| %>
+        <% Reports::NetWorthChangeSeries::MODES.each do |choice| %>
+          <% control.with_segment(t(".modes.#{choice}"), active: mode == choice, href: portfolio_path(links.merge(stock_mode: choice, stock_period: stock_assets.range)), class: "whitespace-nowrap") %>
+        <% end %>
+      <% end %>
+      <%= render DS::SegmentedControl.new(aria_label: t(".period")) do |control| %>
+        <% Portfolio::StockAssets::PERIODS.each do |choice| %>
+          <% control.with_segment(t(".periods.#{choice}"), active: stock_assets.range == choice, href: portfolio_path(links.merge(stock_period: choice, stock_mode: mode)), class: "whitespace-nowrap") %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+  <% if stats %>
+    <% scale = stats.fetch(:scale) %>
+    <%# Keep the most recent months in view on a narrow screen. %>
+    <div class="overflow-x-auto privacy-sensitive" dir="rtl" tabindex="0" role="region" aria-label="<%= t(".title") %>">
+      <ol class="flex min-w-full w-max" dir="ltr" data-testid="stock-growth-bars">
+        <% rows.each do |row| %>
+          <% value = row[mode.to_sym] %>
+          <% label = stock_change_label(value, mode, stock_assets.currency) %>
+          <% height = scale.positive? && value ? (100 * value.abs / scale).to_f : 0 %>
+          <li class="min-w-20 flex-1 text-center text-xs" aria-label="<%= "#{row[:date].strftime('%Y-%m')} #{label}" %>">
+            <p class="py-1 tabular-nums text-secondary"><%= label %></p>
+            <div class="grid h-36 grid-rows-2">
+              <div class="flex items-end justify-center border-b border-dashed border-secondary">
+                <% if value&.positive? %>
+                  <span class="w-8 rounded-t bg-success" style="height: <%= height %>%"></span>
+                <% end %>
+              </div>
+              <div class="flex justify-center">
+                <% if value&.negative? %>
+                  <span class="w-8 rounded-b bg-destructive" style="height: <%= height %>%"></span>
+                <% end %>
+              </div>
+            </div>
+            <p class="py-2 text-secondary tabular-nums"><%= row[:date].strftime("%Y-%m") %></p>
+          </li>
+        <% end %>
+      </ol>
+    </div>
+    <p class="text-xs text-secondary"><%= t(".zero", value: stock_change_label(0, mode, stock_assets.currency)) %></p>
+    <% best, worst = stats.values_at(:best, :worst) %>
+    <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <% { rising: "#{stats[:rising]}/#{stats[:count]}",
+           average: stock_change_label(stats[:average], mode, stock_assets.currency),
+           best: t(".month_result", month: best[:date].strftime("%Y-%m"), value: stock_change_label(best[mode.to_sym], mode, stock_assets.currency)),
+           worst: t(".month_result", month: worst[:date].strftime("%Y-%m"), value: stock_change_label(worst[mode.to_sym], mode, stock_assets.currency)) }.each do |key, label| %>
+        <div class="rounded-lg bg-container-inset p-3">
+          <dt class="text-sm text-secondary"><%= t(".#{key}") %></dt>
+          <dd class="font-semibold tabular-nums privacy-sensitive"><%= label %></dd>
+        </div>
+      <% end %>
+    </dl>
+  <% else %>
+    <p class="text-sm text-secondary"><%= t(".no_data") %></p>
+  <% end %>
+</div>

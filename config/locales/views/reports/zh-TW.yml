@@ -137,9 +137,18 @@ zh-TW:
       no_baseline: 本區間起點淨值是 0，百分比沒有意義。可改看金額。
       no_data: 這個區間的歷史不夠，畫不出變化曲線。
       modes:
-        percent: 百分比
+        percent: "%"
         amount: 金額
     net_worth:
+      chart_period: 淨資產期間
+      chart_periods:
+        month: 近月
+        year: 今年
+        all: 全部
+      chart_changes:
+        month: 近月變動
+        year: 今年變動
+        all: 期間變動
       title: 淨資產
       current_net_worth: 目前淨資產
       period_change: 期間變動

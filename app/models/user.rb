@@ -851,8 +851,6 @@ class User < ApplicationRecord
   # default order; the portfolio's is read from its registry so the two
   # lists cannot drift.
   SECTION_DEFAULT_ORDERS = {
-    # Net worth leads this list. The change curve is not stored here: until a
-    # saved order names it, ReportsController places that section first.
     "reports" => %w[
       net_worth trends_insights spending_vs_normal investment_performance
       investment_flows transactions_breakdown
@@ -869,7 +867,13 @@ class User < ApplicationRecord
   def section_collapsed?(namespace, section_key)
     prefix = section_namespace!(namespace)
     collapsed = preferences&.[]("#{prefix}_collapsed_sections")
-    collapsed.is_a?(Hash) && collapsed[section_key] == true
+    return false unless collapsed.is_a?(Hash)
+
+    if prefix == "reports" && section_key == "net_worth" && !collapsed.key?(section_key)
+      return collapsed["net_worth_change"] == true
+    end
+
+    collapsed[section_key] == true
   end
 
   # `order` replaces the namespace's order; `collapsed` merges into the
@@ -906,7 +910,10 @@ class User < ApplicationRecord
   end
 
   def reports_section_order
-    section_order("reports")
+    order = section_order("reports")
+    return order - [ "net_worth_change" ] if order.include?("net_worth")
+
+    order.map { |key| key == "net_worth_change" ? "net_worth" : key }
   end
 
   def reports_net_worth_change_mode

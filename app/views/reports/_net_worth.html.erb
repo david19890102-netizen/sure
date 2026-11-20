@@ -1,53 +1,46 @@
+<%# locals: (net_worth_metrics:, change:, range:) %>
 <div class="space-y-6">
-  <%# Main Net Worth Stats %>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <%# Current Net Worth %>
-    <div class="p-4 bg-surface-inset rounded-lg">
-      <p class="text-sm text-secondary mb-2"><%= t("reports.net_worth.current_net_worth") %></p>
-      <p class="text-2xl font-semibold tabular-nums break-words privacy-sensitive <%= net_worth_metrics[:current_net_worth] >= 0 ? "text-success" : "text-destructive" %>">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <p class="text-sm text-secondary"><%= t("reports.net_worth.current_net_worth") %></p>
+      <p class="text-3xl font-semibold tabular-nums break-words text-primary privacy-sensitive">
         <%= reports_money(net_worth_metrics[:current_net_worth]) %>
       </p>
     </div>
-
-    <%# Period Change %>
-    <div class="p-4 bg-surface-inset rounded-lg">
-      <p class="text-sm text-secondary mb-2"><%= t("reports.net_worth.period_change") %></p>
-      <% if net_worth_metrics[:trend] %>
-        <% trend = net_worth_metrics[:trend] %>
-        <p class="text-2xl font-semibold mb-1 privacy-sensitive" style="color: <%= trend.color %>">
-          <%= reports_money(trend.value, signify_positive: true) %>
-        </p>
-        <% if trend.percent.finite? %>
-          <p class="text-xs" style="color: <%= trend.color %>">
-            <%= trend.value >= 0 ? "+" : "" %><%= trend.percent_formatted %>
-          </p>
+    <div class="flex flex-wrap gap-2">
+      <%= render DS::SegmentedControl.new(aria_label: t("reports.net_worth.chart_period")) do |control| %>
+        <% %w[month year all].each do |choice| %>
+          <% control.with_segment(t("reports.net_worth.chart_periods.#{choice}"), active: range == choice,
+               href: reports_path(request.query_parameters.merge(net_worth_period: choice)), class: "whitespace-nowrap") %>
         <% end %>
-      <% else %>
-        <p class="text-2xl font-semibold mb-1 text-subdued">--</p>
       <% end %>
-    </div>
-
-    <%# Assets vs Liabilities %>
-    <div class="p-4 bg-surface-inset rounded-lg">
-      <p class="text-sm text-secondary mb-2"><%= t("reports.net_worth.assets_vs_liabilities") %></p>
-      <div class="flex items-baseline gap-2 flex-wrap">
-        <span class="text-lg font-semibold text-primary tabular-nums break-words privacy-sensitive"><%= reports_money(net_worth_metrics[:total_assets]) %></span>
-        <span class="text-xs text-subdued shrink-0">-</span>
-        <span class="text-lg font-semibold text-primary tabular-nums break-words privacy-sensitive"><%= reports_money(net_worth_metrics[:total_liabilities]) %></span>
-      </div>
+      <%= render DS::SegmentedControl.new(aria_label: t("reports.net_worth_change.mode_aria")) do |control| %>
+        <% Reports::NetWorthChangeSeries::MODES.each do |choice| %>
+          <% control.with_segment(t("reports.net_worth_change.modes.#{choice}"), active: change.mode == choice,
+               href: reports_path(request.query_parameters.merge(net_worth_change: choice)), class: "whitespace-nowrap") %>
+        <% end %>
+      <% end %>
     </div>
   </div>
 
-  <%# Net Worth Over Time chart %>
-  <% breakdown_series = net_worth_metrics[:breakdown_series] %>
-  <% if breakdown_series && breakdown_series[:values].size >= 2 %>
-    <div
-      id="reportsNetWorthChart"
-      class="w-full h-56 sm:h-72 privacy-sensitive"
-      data-controller="net-worth-chart"
-      data-net-worth-chart-data-value="<%= breakdown_series.to_json %>"
-      data-net-worth-chart-assets-label-value="<%= t("reports.net_worth.total_assets") %>"
-      data-net-worth-chart-liabilities-label-value="<%= t("reports.net_worth.total_liabilities") %>"></div>
+  <% if (summary = change.summary) %>
+    <p class="flex flex-wrap items-baseline gap-2 text-sm text-secondary" data-testid="reports-net-worth-summary">
+      <%= t("reports.net_worth.chart_changes.#{range}") %>
+      <span class="font-semibold tabular-nums privacy-sensitive" style="color: <%= summary[:color] %>">
+        <%= summary[:amount] %>
+        <%= summary[:percent] %>
+      </span>
+    </p>
+  <% end %>
+
+  <% if change.baseline_missing? %>
+    <p id="reports-net-worth-change-empty" class="text-sm text-secondary"><%= t("reports.net_worth_change.no_baseline") %></p>
+  <% elsif (chart = change.chart) %>
+    <div id="reportsNetWorthChart" class="w-full h-56 sm:h-72 privacy-sensitive"
+         data-controller="time-series-chart" data-time-series-chart-locale-value="<%= I18n.locale %>"
+         data-time-series-chart-data-value="<%= chart.to_json %>" draggable="false"></div>
+  <% else %>
+    <p id="reports-net-worth-change-empty" class="text-sm text-secondary"><%= t("reports.net_worth_change.no_data") %></p>
   <% end %>
 
   <%# Asset/Liability Breakdown %>
