@@ -108,13 +108,17 @@
 @media (prefers-reduced-motion: reduce) {
   .finance-workspace * { scroll-behavior: auto; }
 }
-.finance-workspace,
-[data-theme="dark"] .finance-workspace {
+.finance-workspace {
   --color-success: #78f7b7;
   --color-destructive: #ff728f;
   --color-warning: #ffe178;
   --color-gray: #c8b2d7;
   --utility-text-inverse: #fff1ff;
+}
+/* Keep the semantic colors used by the loan chart responsive to theme changes. */
+[data-theme="dark"] .finance-workspace {
+  --color-success: #9dffd0;
+  --color-warning: #ffedaa;
 }
 .finance-workspace .segmented-control__segment--active {
   background: #593057;
