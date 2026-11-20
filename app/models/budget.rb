@@ -138,7 +138,7 @@ class Budget < ApplicationRecord
   end
 
   def nested_category?(category)
-    @include_all_categories ? category.subcategory? : category.nested_in_budget_book?
+    @include_all_categories ? category.parent_id.present? : category.nested_in_budget_book?
   end
 
   def includes_uncategorized?
@@ -146,7 +146,7 @@ class Budget < ApplicationRecord
   end
 
   def sync_budget_categories
-    current_categories_by_id = categories_for_book.index_by(&:id)
+    current_categories_by_id = categories_for_book.includes(:parent).index_by(&:id)
     categories_to_add = current_categories_by_id.keys - budget_categories.pluck(:category_id)
     inherited_rollover = inherited_rollover_flags(categories_to_add)
 
