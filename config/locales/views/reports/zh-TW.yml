@@ -1,6 +1,15 @@
 ---
 zh-TW:
   reports:
+    books:
+      label: 報表帳本
+      all: 全部
+      personal: 個人
+      family: 家人
+      net_worth_note: 淨資產固定顯示全部。
+    cash_flow:
+      title: 現金流
+      empty: 這段期間沒有現金流資料。
     index:
       title: 報表
       subtitle: 深入洞察您的財務健康狀況

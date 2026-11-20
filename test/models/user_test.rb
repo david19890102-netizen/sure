@@ -891,7 +891,7 @@ class UserTest < ActiveSupport::TestCase
       "Should return false when reports_collapsed_sections key is missing"
 
     # reports_section_order should return default order when key is missing
-    assert_equal %w[net_worth trends_insights spending_vs_normal investment_performance investment_flows transactions_breakdown],
+    assert_equal %w[net_worth trends_insights spending_vs_normal investment_performance investment_flows transactions_breakdown cash_flow],
       @user.reports_section_order,
       "Should return default order when reports_section_order key is missing"
 
@@ -1014,7 +1014,7 @@ class UserTest < ActiveSupport::TestCase
   test "a stored section order that is not an array reads as the default" do
     @user.update_columns(preferences: { "reports_section_order" => "net_worth", "portfolio_section_order" => { "a" => 1 } })
 
-    assert_equal %w[net_worth trends_insights spending_vs_normal investment_performance investment_flows transactions_breakdown],
+    assert_equal %w[net_worth trends_insights spending_vs_normal investment_performance investment_flows transactions_breakdown cash_flow],
       @user.section_order("reports")
     assert_equal Portfolio::SectionRegistry::KEYS, @user.section_order("portfolio")
   end

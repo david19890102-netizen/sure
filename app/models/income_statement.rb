@@ -18,6 +18,16 @@ class IncomeStatement
     @budget_book = budget_book
   end
 
+  def transactions_in_budget_book(scope)
+    return scope unless @budget_book
+
+    Category.filter_budget_transactions(scope, family: family, book: @budget_book)
+  end
+
+  def nested_category?(category)
+    @budget_book ? category.nested_in_budget_book? : category.subcategory?
+  end
+
   def totals(transactions_scope: nil, date_range:)
     # Default to excluding pending transactions from budget/analytics calculations
     # Pending transactions shouldn't affect budget totals until they post
@@ -166,7 +176,8 @@ class IncomeStatement
   # computes to zero instead of the totals it actually appears in elsewhere.
   def eligible_accounts
     @eligible_accounts ||= begin
-      scope = family.accounts.visible.included_in_reports
+      scope = family.accounts.visible
+      scope = scope.included_in_reports unless @budget_book == "family"
       tax_advantaged_ids = family.tax_advantaged_account_ids
       scope = scope.where.not(id: tax_advantaged_ids) if tax_advantaged_ids.present?
       scope = scope.merge(Account.included_in_finances_for(user)) if user
@@ -203,10 +214,6 @@ class IncomeStatement
     def categories
       # Keep Category#subcategory?'s parent-based orphan semantics without lazy loads.
       @categories ||= family.categories.includes(:parent).to_a
-    end
-
-    def nested_category?(category)
-      @budget_book ? category.nested_in_budget_book? : category.subcategory?
     end
 
     def period_cache_key(period)
@@ -268,7 +275,6 @@ class IncomeStatement
       @totals_for_period ||= {}
       @totals_for_period[period_cache_key(period)] ||= begin
         scope = family.transactions.visible.excluding_pending.merge(Entry.excluding_scheduled).in_period(period)
-        scope = Category.filter_budget_transactions(scope, family: family, book: @budget_book) if @budget_book
         totals_query(transactions_scope: scope, date_range: period.date_range)
       end
     end
@@ -369,10 +375,11 @@ class IncomeStatement
     def budget_category_cache_key
       return [] unless @budget_book
 
-      [ "budget_book_v2", @budget_book, family.categories.in_budget_book(@budget_book).reorder(:id).pluck(:id) ]
+      [ "budget_book_v3", @budget_book, family.categories.in_budget_book(@budget_book).reorder(:id).pluck(:id) ]
     end
 
     def totals_query(transactions_scope:, date_range:)
+      transactions_scope = transactions_in_budget_book(transactions_scope)
       sql_hash = Digest::MD5.hexdigest(transactions_scope.to_sql)
 
       Rails.cache.fetch([

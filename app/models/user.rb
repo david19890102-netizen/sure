@@ -853,7 +853,7 @@ class User < ApplicationRecord
   SECTION_DEFAULT_ORDERS = {
     "reports" => %w[
       net_worth trends_insights spending_vs_normal investment_performance
-      investment_flows transactions_breakdown
+      investment_flows transactions_breakdown cash_flow
     ].freeze,
     "portfolio" => Portfolio::SectionRegistry::KEYS
   }.freeze

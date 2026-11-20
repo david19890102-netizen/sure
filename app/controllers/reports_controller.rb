@@ -1,6 +1,10 @@
 class ReportsController < ApplicationController
   include Periodable
 
+  helper_method :report_book_params
+
+  before_action :set_report_book, only: %i[index print picker export_transactions google_sheets_instructions]
+
   # Allow API key authentication for exports (for Google Sheets integration)
   # Note: We run authentication_for_export which handles both session and API key auth
   skip_authentication only: :export_transactions
@@ -84,7 +88,7 @@ class ReportsController < ApplicationController
       end_date: params[:end_date],
       sort_by: params[:sort_by],
       sort_direction: params[:sort_direction]
-    }.compact
+    }.compact.merge(report_book_params)
 
     # The CSV URL the instructions tell people to add their API key to
     @csv_url = export_transactions_reports_url(base_params.merge(format: :csv))
@@ -103,6 +107,15 @@ class ReportsController < ApplicationController
   end
 
   private
+    def set_report_book
+      @report_book = Category::BUDGET_BOOKS.include?(params[:book]) ? params[:book] : "all"
+      @budget_book = @report_book unless @report_book == "all"
+    end
+
+    def report_book_params
+      params[:book].present? ? { book: @report_book } : {}
+    end
+
     def setup_report_data(show_flash: false)
       @period_type = params[:period_type]&.to_sym || :monthly
       @start_date = parse_date_param(:start_date) || default_start_date
@@ -116,7 +129,7 @@ class ReportsController < ApplicationController
       @previous_period = build_previous_period
 
       # Get aggregated data
-      @income_statement = Current.family.income_statement(user: Current.user)
+      @income_statement = Current.family.income_statement(user: Current.user, budget_book: @budget_book)
       @current_income_totals = @income_statement.income_totals(period: @period)
       @current_expense_totals = @income_statement.expense_totals(period: @period)
 
@@ -132,6 +145,8 @@ class ReportsController < ApplicationController
       # Net worth metrics
       @net_worth_metrics = build_net_worth_metrics
 
+      @net_worth_trends = @budget_book && action_name == "print" ? build_trends_data(income_statement: Current.family.income_statement(user: Current.user)) : @trends_data
+
       # Transactions breakdown
       @transactions = build_transactions_breakdown
 
@@ -142,7 +157,7 @@ class ReportsController < ApplicationController
       @spending_comparison = build_spending_comparison
 
       # Investment flows (contributions/withdrawals)
-      @investment_flows = InvestmentFlowStatement.new(Current.family, user: Current.user).period_totals(period: @period)
+      @investment_flows = InvestmentFlowStatement.new(Current.family, user: Current.user, budget_book: @budget_book).period_totals(period: @period)
 
       # Flags for view rendering
       @has_accounts = accessible_accounts.any?
@@ -191,6 +206,17 @@ class ReportsController < ApplicationController
           title: "reports.trends.title",
           partial: "reports/trends_insights",
           locals: { trends_data: @trends_data },
+          visible: @has_accounts,
+          collapsible: true
+        },
+        {
+          key: "cash_flow",
+          title: "reports.cash_flow.title",
+          partial: "reports/cash_flow",
+          locals: {
+            sankey_data: IncomeStatement::Sankey.new(@income_statement, period: @period).as_json,
+            period: @period
+          },
           visible: @has_accounts,
           collapsible: true
         },
@@ -348,7 +374,8 @@ class ReportsController < ApplicationController
       return nil unless @period_type == :monthly && @start_date.beginning_of_month.to_date == Date.current.beginning_of_month.to_date
 
       budget = Budget.find_or_bootstrap(
-        Current.family, start_date: @start_date.beginning_of_month.to_date, user: Current.user, include_all_categories: true
+        Current.family, start_date: @start_date.beginning_of_month.to_date, user: Current.user,
+        book: @budget_book || "personal", include_all_categories: @budget_book.nil?
       )
       return 0 if budget.nil? || budget.allocated_spending.zero?
 
@@ -430,7 +457,6 @@ class ReportsController < ApplicationController
         .joins(:entry)
         .joins(entry: :account)
         .where(accounts: { family_id: Current.family.id, status: [ "draft", "active" ] })
-        .merge(Account.included_in_reports)
         .where(entries: { entryable_type: "Transaction", excluded: false, date: @period.date_range })
         .where.not(kind: Current.family.analytics_excluded_kinds)
         .includes(entry: :account, category: :parent)
@@ -444,9 +470,9 @@ class ReportsController < ApplicationController
         .joins(:entry)
         .joins(entry: :account)
         .where(accounts: { family_id: Current.family.id, status: [ "draft", "active" ] })
-        .merge(Account.included_in_reports)
         .where(entries: { entryable_type: "Trade", excluded: false, date: @period.date_range })
         .includes(entry: :account, category: :parent)
+      trades = @budget_book == "family" ? trades.none : trades.merge(Account.included_in_reports)
       trades = exclude_tax_advantaged_accounts(trades)
 
       trades = apply_entry_filters(trades)
@@ -510,7 +536,7 @@ class ReportsController < ApplicationController
             parent_key = [ :uncategorized, type ]
             grouped_data[parent_key] ||= init_category_group.call(:uncategorized, Category.uncategorized.name, Category.uncategorized.color, Category.uncategorized.lucide_icon, type, Category.uncategorized.filter_value)
           end
-        elsif category.parent_id.present?
+        elsif @budget_book ? category.nested_in_budget_book? : category.parent_id.present?
           # This is a subcategory - group under parent
           parent = category.parent
           parent_key = [ parent.id, type ]
@@ -734,7 +760,6 @@ class ReportsController < ApplicationController
         # leaves it out of the same card's contributions and withdrawals.
         .where(entries: { date: @period.date_range, excluded: false })
         .where(entries: { account_id: Current.user.finance_accounts.select(:id) })
-        .merge(Account.included_in_reports)
         .where("trades.qty < 0")
         # A transfer out has the same negative quantity as a sale and would be
         # counted and listed as one. Nothing was sold, so it belongs in neither.
@@ -792,8 +817,15 @@ class ReportsController < ApplicationController
       Period.custom(start_date: start, end_date: today)
     end
 
+    def scope_to_report_book(scope)
+      scope = scope.merge(Account.included_in_reports) unless @budget_book == "family"
+      return scope unless @budget_book
+
+      Category.filter_budget_transactions(scope, family: Current.family, book: @budget_book)
+    end
+
     def apply_transaction_filters(scope)
-      scope = apply_entry_filters(scope)
+      scope = apply_entry_filters(scope_to_report_book(scope))
 
       # Filter by tag (Transaction-specific — trades don't have taggings)
       if params[:filter_tag_id].present?
@@ -863,7 +895,6 @@ class ReportsController < ApplicationController
         .joins(:entry)
         .joins(entry: :account)
         .where(accounts: { family_id: Current.family.id, status: [ "draft", "active" ] })
-        .merge(Account.included_in_reports)
         .where(entries: { entryable_type: "Transaction", excluded: false, date: @period.date_range })
         .where.not(kind: Current.family.analytics_excluded_kinds)
         .includes(entry: :account, category: [])
@@ -902,7 +933,6 @@ class ReportsController < ApplicationController
         .joins(:entry)
         .joins(entry: :account)
         .where(accounts: { family_id: Current.family.id, status: [ "draft", "active" ] })
-        .merge(Account.included_in_reports)
         .where(entries: { entryable_type: "Transaction", excluded: false, date: @period.date_range })
         .where.not(kind: Current.family.analytics_excluded_kinds)
         .includes(entry: :account, category: [])

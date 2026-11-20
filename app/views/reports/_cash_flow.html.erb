@@ -1,0 +1,8 @@
+<%# locals: (sankey_data:, period:) %>
+<% if sankey_data[:links].any? %>
+  <div class="h-96">
+    <%= render "pages/dashboard/cashflow_preview_chart", sankey_data: sankey_data, period: period, currency: Current.family.currency %>
+  </div>
+<% else %>
+  <p class="py-8 text-center text-secondary"><%= t("reports.cash_flow.empty") %></p>
+<% end %>

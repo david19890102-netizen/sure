@@ -3,6 +3,9 @@
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
       <p class="text-sm text-secondary"><%= t("reports.net_worth.current_net_worth") %></p>
+      <% if @budget_book %>
+        <p class="text-xs text-secondary"><%= t("reports.books.net_worth_note") %></p>
+      <% end %>
       <p class="text-3xl font-semibold tabular-nums break-words text-primary privacy-sensitive">
         <%= reports_money(net_worth_metrics[:current_net_worth]) %>
       </p>

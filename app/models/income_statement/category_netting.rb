@@ -20,8 +20,8 @@ class IncomeStatement::CategoryNetting
       category = (expense[key] || income[key]).category
       { category: category, net: (expense[key]&.total || 0).to_d - (income[key]&.total || 0).to_d }
     end
-    children = entries.select { |entry| entry[:category].subcategory? }.group_by { |entry| entry[:category].parent_id }
-    entries.reject { |entry| entry[:category].subcategory? }.map do |root|
+    children = entries.select { |entry| @statement.nested_category?(entry[:category]) }.group_by { |entry| entry[:category].parent_id }
+    entries.reject { |entry| @statement.nested_category?(entry[:category]) }.map do |root|
       subs = children.fetch(root[:category].id, [])
       { category: root[:category], direct: root[:net] - subs.sum { |sub| sub[:net] }, children: subs }
     end

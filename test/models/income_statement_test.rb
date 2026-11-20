@@ -20,6 +20,37 @@ class IncomeStatementTest < ActiveSupport::TestCase
     create_transaction(account: @credit_card_account, amount: 400, category: @groceries_category)
   end
 
+  test "reports totals and Sankey use separate caches and retain split-book children" do
+    Rails.stubs(:cache).returns(ActiveSupport::Cache::MemoryStore.new)
+    hidden = @family.accounts.create!(name: "Test report-hidden account", currency: @family.currency,
+      balance: 100, accountable: Depository.new, exclude_from_reports: true)
+    family_child = @family.categories.create!(name: "Test family spending", parent: @food_category, budget_book: "family")
+    family_income = @family.categories.create!(name: "Test family income", parent: @income_category, budget_book: "family")
+    create_transaction(account: @checking_account, amount: 40, category: family_child)
+    create_transaction(account: hidden, amount: 60, category: family_child)
+    create_transaction(account: hidden, amount: -200, category: family_income)
+    create_transaction(account: hidden, amount: -300, category: @income_category)
+    create_transaction(account: hidden, amount: 500, category: family_child).update!(excluded: true)
+    period = Period.current_month
+
+    all = @family.income_statement
+    personal = @family.income_statement(budget_book: "personal")
+    family = @family.income_statement(budget_book: "family")
+
+    assert_equal [ 1000, 940 ], [ all.income_totals(period: period).total, all.expense_totals(period: period).total ]
+    assert_equal [ 1000, 900 ], [ personal.income_totals(period: period).total, personal.expense_totals(period: period).total ]
+    assert_equal [ 200, 100 ], [ family.income_totals(period: period).total, family.expense_totals(period: period).total ]
+    assert_equal 100, family.totals_for(period).expense_money.amount
+    graph = IncomeStatement::Sankey.new(family, period: period).as_json
+    assert_equal [ "200.0", "100.0" ], graph.values_at(:income, :spending)
+    assert_includes graph[:nodes].pluck(:category_id), family_child.id
+    assert_not_includes graph[:nodes].pluck(:category_id), @food_category.id
+
+    family_child.update!(budget_book: "personal")
+    assert_equal 0, @family.income_statement(budget_book: "family").expense_totals(period: period).total
+    assert_equal 940, @family.income_statement(budget_book: "personal").expense_totals(period: period).total
+  end
+
   test "a new statement invalidates daily series when the family currency changes" do
     statement = IncomeStatement.new(@family)
     period = Period.last_30_days
