@@ -11,6 +11,11 @@ en:
         title: What's new
         done: Got it
       nav:
+        reorder: Reorder
+        reset: Reset
+        move_up: Move %{name} up
+        move_down: Move %{name} down
+        storage_error: Could not save the order in this browser.
         assistant: Assistant
         bills: Bills
         budgets: Budgets

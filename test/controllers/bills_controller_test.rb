@@ -577,7 +577,7 @@ class BillsControllerTest < ActionDispatch::IntegrationTest
     # Next-up items and the calendar link carry the DS focus ring, and the
     # items no longer bleed past the strip that clips them on phones.
     assert_select "a.focus-ring", text: I18n.t("bills.month_pulse.view_calendar")
-    assert_select "a.w-36[href^='/bills/']", text: /Amazon Prime/ do |links|
+    assert_select "nav[aria-label=?] a[data-turbo-frame=drawer]", I18n.t("bills.month_pulse.next_up"), text: /Amazon Prime/ do |links|
       links.each do |link|
         classes = link["class"].split
         assert_includes classes, "focus-ring"

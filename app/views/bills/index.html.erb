@@ -96,6 +96,7 @@
       with a match to review already says so and offers Review match, so
       nothing here is only reachable from up top. %>
   <% if @suggested_allocations.any? %>
+    <div id="payment-matches" class="scroll-mt-20"></div>
     <%= render DS::Section.new(title: t(".needs_review"), count: @suggested_allocations.size) do %>
       <% @suggested_allocations.each do |suggestion| %>
         <% series = suggestion.recurring_occurrence.recurring_transaction %>

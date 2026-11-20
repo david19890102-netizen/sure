@@ -98,6 +98,21 @@ class BillDrawerTest < ApplicationSystemTestCase
     assert_no_selector "dialog[open]"
   end
 
+  test "the desktop rail leaves the bill usable with both sidebars open" do
+    [ 1280, 1366, 1440, 1500, 1600 ].each do |width|
+      page.current_window.resize_to(width, 1100)
+      visit bills_url
+      assert_selector @row_link
+      rail_width = find(".finance-rail").evaluate_script("this.getBoundingClientRect().width")
+      assert_equal(width < 1536 ? 84 : 160, rail_width)
+      assert_selector @find_payment_link if width >= 1440
+      find(@row_link).click
+      within("dialog[open]") { assert_selector "h2", text: "City Water" }
+      page.send_keys(:escape)
+      assert_no_selector "dialog[open]"
+    end
+  end
+
   # Find payment swaps the bill's drawer for the payment drawer inside the same
   # frame, and the link that did it goes with the first one.
   test "closing the payment drawer opened from a bill's drawer returns focus to the row" do

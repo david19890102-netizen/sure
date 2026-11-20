@@ -1,0 +1,29 @@
+<%# locals: (upcoming:, review_count:) %>
+<div class="finance-bill-grid px-4">
+  <div>
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h3 class="text-sm font-medium text-primary"><%= t(".upcoming") %></h3>
+      <%= link_to t(".calendar"), bills_path(view: "calendar"), class: "text-sm text-link underline focus-ring" %>
+    </div>
+    <% if upcoming.empty? %>
+      <p class="text-sm text-secondary"><%= t(".empty") %></p>
+    <% else %>
+      <ul class="divide-y divide-subdued">
+        <% upcoming.each do |bill| %>
+          <li class="py-2 flex justify-between items-center gap-3">
+            <div class="min-w-0">
+              <p class="text-primary truncate privacy-sensitive"><%= bill.recurring_transaction.display_name %></p>
+              <p class="text-xs text-secondary"><%= format_date(bill.effective_due_on) %></p>
+            </div>
+            <span class="text-sm font-medium tabular-nums privacy-sensitive"><%= format_money(bill.remaining_amount_money) %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+  <div class="bg-container-inset rounded-xl p-4">
+    <h3 class="text-sm font-medium text-primary"><%= t(".matches") %></h3>
+    <p class="text-sm text-secondary my-2"><%= review_count.positive? ? t(".pending", count: review_count) : t(".none") %></p>
+    <%= link_to t(".bills"), bills_path(anchor: ("payment-matches" if review_count.positive?)), class: "text-sm text-link underline focus-ring" %>
+  </div>
+</div>

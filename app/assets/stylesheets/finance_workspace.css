@@ -1,0 +1,128 @@
+/* Palette scoped to the signed-in workspace. The existing theme toggle
+   continues to select the same light and dark surfaces. */
+.finance-workspace {
+  --color-surface: #f8fafc;
+  --color-container-inset: #f1f5f7;
+  --color-link: #146d63;
+  --finance-ink: #192c41;
+  --finance-rail: #1a293b;
+  --finance-accent: #197568;
+  font-family: Inter, "Noto Sans TC", "PingFang TC", var(--font-sans);
+  color: var(--finance-ink);
+}
+[data-theme="dark"] .finance-workspace {
+  --color-surface: #121c28;
+  --color-container: #1c2938;
+  --color-container-inset: #243241;
+  --color-link: #86d4c2;
+  --finance-ink: #e4edf4;
+  --finance-rail: #101a27;
+  --finance-accent: #78d1bd;
+}
+.finance-rail { background: var(--finance-rail); color: #e4edf4; }
+.finance-rail :is(li,button) { --color-container: #304854; --color-surface-hover: #304854; --color-nav-indicator: #84c6b5; }
+.finance-rail :is(li a,button) :is(p,svg), .finance-rail button { color: #d6e3ec; }
+.finance-rail li a[aria-current="page"] { background: #304854; border-radius: .65rem; }
+.finance-rail li a:focus-visible, .finance-rail button:focus-visible { outline: 2px solid #84c6b5; }
+.finance-net-worth,.finance-bill-grid { container-type: inline-size; display: grid; gap: 1rem; }
+.finance-composition { display: flex; flex-wrap: wrap; gap: 1rem 2rem; margin: 0 1rem; padding: 1rem; border-radius: .875rem; background: var(--color-container-inset); }
+.finance-net-worth .start-color { stop-color: var(--finance-accent); }
+[data-section-key="net_worth_chart"], [data-section-key="bill_activity"] { border-radius: 1rem; container-type: inline-size; }
+@container (min-width: 40rem) {
+  .finance-net-worth { grid-template-columns: minmax(0,2fr) minmax(0,1fr); align-items: stretch; }
+  .finance-composition { flex-direction: column; justify-content: center; margin-left: 0; }
+  .finance-bill-grid { grid-template-columns: 1.25fr 1fr; }
+}
+@media (min-width: 96rem) {
+  .finance-rail { width: 10rem; padding-inline: .5rem; }
+  .finance-rail li a { display: flex; align-items: center; gap: .5rem; padding-block: .4rem; }
+  .finance-rail li a > div { flex-grow: 0; padding-left: 0; }
+  .finance-rail li a p { font-size: .875rem; }
+}
+
+/* Approved neon workspace palette, shared by both theme preferences. */
+.finance-workspace,
+[data-theme="dark"] .finance-workspace {
+  --color-surface: #0b071b;
+  --color-container: #17112b;
+  --color-container-inset: #28203e;
+  --color-container-inset-hover: #3b2d50;
+  --color-container-hover: #302240;
+  --color-surface-inset: #251e38;
+  --color-surface-inset-hover: #382b4d;
+  --color-surface-hover: #352641;
+  --color-link: #6ff4ed;
+  --color-focus-ring: #ffe664;
+  --color-tertiary: #624370;
+  --utility-text-primary: #fff1ff;
+  --utility-text-secondary: #c8b2d7;
+  --utility-text-subdued: #b2a3c4;
+  --utility-border-primary: #765077;
+  --utility-border-secondary: #624370;
+  --utility-border-subdued: #4a365a;
+  --utility-divide-subdued: #4a365a;
+  --utility-tab-item-active: #593057;
+  --utility-tab-item-hover: #382b4d;
+  --utility-tab-bg-group: #251e38;
+  --utility-button-bg-primary: #8345b6;
+  --utility-button-bg-primary-hover: #a04eca;
+  --utility-button-bg-secondary: #28203e;
+  --utility-button-bg-secondary-hover: #3b2d50;
+  --finance-ink: #fff1ff;
+  --finance-rail: #0a0618;
+  --finance-accent: #32f0ff;
+  color-scheme: dark;
+  background-image: radial-gradient(ellipse at 90% 4%, #75158945, transparent 48%),
+    radial-gradient(ellipse at 15% 96%, #0058af40, transparent 45%),
+    linear-gradient(#fd38df0c 1px, transparent 1px),
+    linear-gradient(90deg, #38caff0b 1px, transparent 1px);
+  background-size: auto, auto, 32px 32px, 32px 32px;
+}
+.finance-workspace #main { background: transparent; }
+.finance-rail { background: linear-gradient(180deg, #190b2c, #090d25 65%, #102b38); border-right: 1px solid #fc36d59c; }
+.finance-rail li a { border: 1px solid transparent; }
+.finance-rail li a[aria-current="page"] { background: linear-gradient(90deg, #64174d, #2a1550); border-color: #ff3dd7; border-radius: 2px; box-shadow: inset 3px 0 #ffed45, 0 0 12px #f72acb30; }
+.finance-rail li:nth-child(2) svg { color: #28dfff; }
+.finance-rail li:nth-child(3) svg { color: #ff56d5; }
+.finance-rail li:nth-child(4) svg { color: #c396ff; }
+.finance-rail li:nth-child(5) svg { color: #fff15b; }
+.finance-rail li:nth-child(6) svg { color: #5dffbc; }
+.finance-workspace #main > div.sticky { background: #15102a; border-bottom: 2px solid #e84ac5; }
+.finance-workspace #main h1 { color: #fff7f6; text-shadow: 2px 2px 0 #f22bbc80, -1px -1px 0 #22c9e644; }
+.finance-workspace #main :is(section[data-section-key], .rounded-xl.bg-container) { border-radius: 3px; border: 1px solid #765077; box-shadow: 4px 4px 0 #05020e; }
+.finance-workspace #main [data-section-key="net_worth_chart"] {
+  border-color: #7a6de6;
+  background: linear-gradient(135deg, #1f1440, #272055 48%, #113748);
+}
+.finance-workspace #main [data-section-key="net_worth_chart"] h2 { color: #ff9ee7; }
+.finance-net-worth { border-top: 2px solid #fd49d5; border-bottom: 2px solid #39d9ff; padding-block: 1rem; }
+.finance-net-worth #netWorthChart path { filter: drop-shadow(0 0 2px #16cfe755); }
+.finance-composition { background: linear-gradient(145deg, #2b1740, #1a2343); border: 1px solid #da50b178; border-radius: 2px; }
+.finance-composition div:first-child dd { color: #7dfbe7; }
+.finance-composition div:last-child dd { color: #ffbaec; }
+.finance-workspace #main [data-section-key="bill_activity"] { border-color: #32b8d8; background: linear-gradient(140deg, #102c3c, #18182e); }
+.finance-workspace #main [data-section-key="bill_activity"] h2 { color: #80e8ff; }
+.finance-bill-grid > div:last-child { background: linear-gradient(140deg, #35203c, #26142c); border-left: 3px solid #ff529c; border-radius: 2px; }
+.finance-bill-grid > div:last-child h3 { color: #ffadd7; }
+.finance-workspace #main :is(a,button):focus-visible { outline: 2px solid #ffe664; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .finance-workspace * { scroll-behavior: auto; }
+}
+.finance-workspace {
+  --color-success: #78f7b7;
+  --color-destructive: #ff728f;
+  --color-warning: #ffe178;
+  --color-gray: #c8b2d7;
+  --utility-text-inverse: #fff1ff;
+}
+/* Keep the semantic colors used by the loan chart responsive to theme changes. */
+[data-theme="dark"] .finance-workspace {
+  --color-success: #9dffd0;
+  --color-warning: #ffedaa;
+}
+.finance-workspace .segmented-control__segment--active {
+  background: #593057;
+  color: #fff5ad;
+  border-radius: 2px;
+  box-shadow: inset 0 -2px #ff55d7;
+}

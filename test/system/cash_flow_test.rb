@@ -234,7 +234,7 @@ class CashFlowTest < ApplicationSystemTestCase
     # Tracking stopped when the page was cached for the visit and must be
     # live again: the graph fetched after the morph counts as a display.
     install_posthog_fake
-    find("#cashflow-preview").scroll_to(:center)
+    scroll_to_preview
     assert_event_count "sankey_preview_displayed", 1
   end
 
@@ -265,7 +265,7 @@ class CashFlowTest < ApplicationSystemTestCase
     sign_in @user
     assert_selector "#cashflow-preview svg .sankey-link"
     install_posthog_fake
-    find("#cashflow-preview").scroll_to(:center)
+    scroll_to_preview
     assert_selector "#cashflow-preview [data-preview-sankey-chart-target='chart'] svg"
     assert_event_count "sankey_preview_displayed", 1
     page.execute_script("document.dispatchEvent(new Event('posthog:ready'))")
@@ -335,7 +335,7 @@ class CashFlowTest < ApplicationSystemTestCase
     install_posthog_fake
     assert_event_count "sankey_preview_displayed", 0
     section.find("[data-dashboard-section-target='button']").click
-    find("#cashflow-preview").scroll_to(:center)
+    scroll_to_preview
     assert_event_count "sankey_preview_displayed", 1
     within "#cashflow-preview" do
       find_button("Expand", enable_aria_label: true).send_keys(:enter)
@@ -391,7 +391,7 @@ class CashFlowTest < ApplicationSystemTestCase
         };
         document.dispatchEvent(new Event('posthog:ready'));
       JS
-      find("#cashflow-preview").scroll_to(:center)
+      scroll_to_preview
       assert_event_count "sankey_preview_displayed", 1
       within "#cashflow-preview" do
         click_button "Expand", enable_aria_label: true
@@ -498,6 +498,10 @@ class CashFlowTest < ApplicationSystemTestCase
   end
 
   private
+    def scroll_to_preview
+      find("#main").scroll_to(find("#cashflow-preview"), align: :center)
+    end
+
     def activate_node(node, activation)
       case activation
       when :bar then node.find("path").click

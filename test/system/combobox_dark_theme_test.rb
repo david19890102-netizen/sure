@@ -27,12 +27,13 @@ class ComboboxDarkThemeTest < ApplicationSystemTestCase
     find(".hw-combobox__input").click
     dialog = find("dialog.hw-combobox__dialog[open]")
 
-    assert_equal element_style("bg-container", "backgroundColor"), computed(dialog, "backgroundColor")
-    assert_equal element_style("text-primary", "color"), computed(dialog.find(".hw-combobox__dialog__label"), "color")
+    assert_equal element_style(dialog, "bg-container", "backgroundColor"), computed(dialog, "backgroundColor")
+    label = dialog.find(".hw-combobox__dialog__label")
+    assert_equal element_style(label, "text-primary", "color"), computed(label, "color")
 
     input = dialog.find(".hw-combobox__dialog__input")
-    assert_equal element_style("bg-container", "backgroundColor"), computed(input, "backgroundColor")
-    assert_equal element_style("text-primary", "color"), computed(input, "color")
+    assert_equal element_style(input, "bg-container", "backgroundColor"), computed(input, "backgroundColor")
+    assert_equal element_style(input, "text-primary", "color"), computed(input, "color")
 
     # The gem highlights a hovered result with a fixed light gray, which left
     # white result text unreadable in the dark theme.
@@ -65,9 +66,11 @@ class ComboboxDarkThemeTest < ApplicationSystemTestCase
       supports_hover = page.evaluate_script("matchMedia('(hover: hover)').matches")
       hover_token = supports_hover ? "--color-container-hover" : "--color-container-inset-hover"
 
-      assert_equal token_color(hover_token), computed(option.call("Apple"), "backgroundColor")
-      assert_equal element_style("text-primary", "color"), computed(option.call("Apple"), "color")
-      assert_equal token_color("--color-container"), computed(option.call("Microsoft"), "backgroundColor")
+      hovered = option.call("Apple")
+      untouched = option.call("Microsoft")
+      assert_equal token_color(hovered, hover_token), computed(hovered, "backgroundColor")
+      assert_equal element_style(hovered, "text-primary", "color"), computed(hovered, "color")
+      assert_equal token_color(untouched, "--color-container"), computed(untouched, "backgroundColor")
     end
 
     # What `element` computes for the CSS `property`.
@@ -76,10 +79,10 @@ class ComboboxDarkThemeTest < ApplicationSystemTestCase
     end
 
     # The background color a design-system color variable resolves to.
-    def token_color(variable)
-      page.evaluate_script(<<~JS)
+    def token_color(element, variable)
+      element.evaluate_script(<<~JS)
         (() => {
-          const probe = document.body.appendChild(document.createElement("div"));
+          const probe = this.parentElement.appendChild(document.createElement("div"));
           probe.style.backgroundColor = "var(#{variable})";
           const value = getComputedStyle(probe).backgroundColor;
           probe.remove();
@@ -89,10 +92,10 @@ class ComboboxDarkThemeTest < ApplicationSystemTestCase
     end
 
     # What an element with `class_name` computes for `property`.
-    def element_style(class_name, property)
-      page.evaluate_script(<<~JS)
+    def element_style(element, class_name, property)
+      element.evaluate_script(<<~JS)
         (() => {
-          const probe = document.body.appendChild(document.createElement("div"));
+          const probe = this.parentElement.appendChild(document.createElement("div"));
           probe.className = #{class_name.to_json};
           const value = getComputedStyle(probe)[#{property.to_json}];
           probe.remove();

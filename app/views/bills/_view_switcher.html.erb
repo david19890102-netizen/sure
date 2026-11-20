@@ -12,7 +12,10 @@
 <% add_text = income_first ? t("bills.index.add_income") : t("bills.index.add_bill") %>
 <% add_href = income_first ? new_recurring_transaction_path(income: true) : new_recurring_transaction_path %>
 <header class="flex justify-between items-center gap-2 text-primary font-medium">
-  <h1 class="text-xl"><%= t("bills.index.title") %></h1>
+  <div class="min-w-0">
+    <h1 class="text-xl"><%= t("bills.index.title") %></h1>
+    <p class="mt-1 text-sm font-normal text-secondary"><%= t("bills.index.description") %></p>
+  </div>
 
   <div class="flex items-center gap-2 shrink-0">
     <%= render DS::Menu.new do |menu| %>
@@ -60,9 +63,9 @@
     page it showed only the selected pill and loose words. surface-inset is the
     track DS::Tabs gives Transactions' view switch, and the budgets owner
     switcher already overrides it the same way. %>
-<%= render DS::SegmentedControl.new(aria_label: t("bills.views.aria_label"), class: "bg-surface-inset") do |control| %>
-  <% control.with_segment(t("bills.views.overview"), active: active == "overview", href: bills_path) %>
-  <% control.with_segment(t("bills.views.calendar"), active: active == "calendar", href: bills_path(view: "calendar")) %>
-  <% control.with_segment(t("bills.views.paycheck"), active: active == "paycheck", href: bills_path(view: "paycheck")) %>
-  <% control.with_segment(t("bills.views.all"), active: active == "all", href: bills_path(view: "all")) %>
+<%= render DS::SegmentedControl.new(aria_label: t("bills.views.aria_label"), class: "bg-surface-inset w-full sm:w-fit overflow-x-auto") do |control| %>
+  <% control.with_segment(t("bills.views.overview"), active: active == "overview", href: bills_path, class: "min-h-11 flex-1 sm:flex-none sm:px-4") %>
+  <% control.with_segment(t("bills.views.calendar"), active: active == "calendar", href: bills_path(view: "calendar"), class: "min-h-11 flex-1 sm:flex-none sm:px-4") %>
+  <% control.with_segment(t("bills.views.paycheck"), active: active == "paycheck", href: bills_path(view: "paycheck"), class: "min-h-11 flex-1 sm:flex-none sm:px-4") %>
+  <% control.with_segment(t("bills.views.all"), active: active == "all", href: bills_path(view: "all"), class: "min-h-11 flex-1 sm:flex-none sm:px-4") %>
 <% end %>

@@ -38,6 +38,17 @@ zh-TW:
       heading: 服務條款
       placeholder: 服務條款的內容會顯示在這裡。
     dashboard:
+      current_net_worth: 目前餘額
+      financial_overview: 財務總覽
+      bill_activity:
+        title: "帳單動態"
+        upcoming: "未來 30 天到期"
+        matches: "帳單與交易配對"
+        empty: "近期沒有待繳帳單。"
+        none: "沒有待確認的配對。"
+        calendar: "查看月曆"
+        bills: "查看帳單"
+        pending: "%{count} 筆配對待確認"
       cashflow_preview:
         node_labels:
           cash_flow: "現金流"

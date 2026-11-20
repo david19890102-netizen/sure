@@ -1,38 +1,38 @@
 <%# locals: (balance_sheet:, period:, **args) %>
+<% series = balance_sheet.net_worth_series(period: period) %>
+<% change = BalanceSheet::PeriodChange.new(series) %>
 
-<div id="net-worth-chart">
-  <% series = balance_sheet.net_worth_series(period: period) %>
-  <% change = BalanceSheet::PeriodChange.new(series) %>
-  <div class="flex justify-between gap-4 px-4">
-    <div class="space-y-2">
-      <% if change.current %>
-        <p class="text-primary -space-x-0.5 text-3xl font-medium privacy-sensitive <%= "animate-pulse" if balance_sheet.syncing? %>">
-          <%= change.current.format %>
-        </p>
-        <% if change.comparable? %>
-          <%= render partial: "shared/trend_change", locals: { trend: change.trend, comparison_label: period.comparison_label } %>
-        <% else %>
-          <p id="net-worth-no-baseline" class="text-sm text-secondary"><%= t(".no_baseline") %></p>
-        <% end %>
-      <% else %>
-        <p class="text-sm text-secondary"><%= t(".data_not_available") %></p>
+<div id="net-worth-chart" class="finance-net-worth">
+  <div class="min-w-0">
+    <div class="space-y-2 px-4">
+      <p class="text-xs text-secondary"><%= t("pages.dashboard.current_net_worth") %></p>
+      <p class="text-primary text-3xl sm:text-4xl tabular-nums font-semibold privacy-sensitive <%= "animate-pulse" if balance_sheet.syncing? %>">
+        <%= format_money(balance_sheet.net_worth_money) %>
+      </p>
+      <% if change.comparable? %>
+        <%= render "shared/trend_change", trend: change.trend, comparison_label: period.comparison_label %>
+      <% elsif change.current %>
+        <p id="net-worth-no-baseline" class="text-sm text-secondary"><%= t(".no_baseline") %></p>
       <% end %>
     </div>
+    <% if series.any? %>
+      <div id="netWorthChart"
+           class="w-full min-h-52 privacy-sensitive"
+           style="height: var(--dash-widget-h, 13rem);"
+           data-controller="time-series-chart"
+           data-time-series-chart-data-value="<%= series.to_json %>"
+           data-time-series-chart-selectable-value="true"
+           draggable="false"></div>
+    <% else %>
+      <p class="p-4 text-secondary text-sm"><%= t(".data_not_available") %></p>
+    <% end %>
   </div>
-
-  <% if series.any? %>
-    <div
-    id="netWorthChart"
-    class="w-full min-h-52 privacy-sensitive"
-    style="height: var(--dash-widget-h, 13rem);"
-    data-controller="time-series-chart"
-    data-time-series-chart-data-value="<%= series.to_json %>"
-    data-time-series-chart-selectable-value="true"
-    draggable="false"></div>
-  <% else %>
-    <div class="w-full h-full flex items-center justify-center">
-      <p class="text-secondary text-sm"><%= t(".data_not_available") %></p>
-    </div>
-  <% end %>
-
+  <dl class="finance-composition">
+    <% balance_sheet.classification_groups.each do |group| %>
+      <div>
+        <dt class="text-sm text-secondary"><%= group.name %></dt>
+        <dd class="text-xl font-semibold tabular-nums text-primary privacy-sensitive"><%= format_money(group.total_money) %></dd>
+      </div>
+    <% end %>
+  </dl>
 </div>

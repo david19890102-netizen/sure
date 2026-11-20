@@ -1,0 +1,318 @@
+---
+zh-TW:
+  bills:
+    row_overdue: 已逾期
+    row_today: 今天
+    detect:
+      found:
+        one: 找到 1 筆可能的帳單，請在下方確認。
+        other: 找到 %{count} 筆可能的帳單，請在下方確認。
+      none_found: 沒有找到新的定期交易規律，也可以手動新增帳單。
+      already_running: 正在辨識帳單，請稍後查看。
+    feed:
+      calendar_name: Sure 帳單
+    ai_prompts:
+      due_before_paycheck: 下次收入入帳前，有哪些帳單要繳？
+      subscriptions_up: 今年哪些訂閱漲價了？
+      monthly_subscriptions: 每月訂閱費用是多少？
+      safe_to_spend: 這一期繳完帳單後還剩多少？
+    smart_configurations:
+      show:
+        trigger: AI 協助設定
+        title: "%{name} 的 AI 設定建議"
+        intro: 勾選要套用的項目，未勾選的設定保持原樣。
+        no_changes: 這筆帳單的設定已符合付款紀錄，無須調整。
+        failed: 目前無法分析這筆帳單，原有設定未變更。
+        field_name: 名稱
+        field_amount: 金額
+        field_schedule: 週期
+        field_category: 分類
+        field_kind: 類型
+        field_autopay: 自動扣款
+        uncategorized: 未分類
+        autopay_off: 已關閉
+        autopay_on: 已開啟
+        apply: 套用勾選項目
+    detail:
+      current: 目前狀態
+      next_payment: 下次付款
+      around: "約 %{date}"
+      overview: 總覽
+      rules: 付款配對規則
+      rule_named: "%{name}"
+      rule_amount_range: "%{min} 至 %{max}"
+      rule_aliases: "也比對 %{names}"
+      rule_detected: "比對名稱為 %{name} 的交易"
+      rule_learned_tolerance: "金額與平常相差 %{percent} 以內的交易可配對此帳單"
+      history_title: 最近 12 個月
+      history_aria: 最近 12 個月的付款紀錄
+      key_metrics: 年度統計
+      year: 年度
+      spent_per_year: 已支出
+      avg_payment: 平均付款
+      average: 平均付款金額
+      range: "%{min} 至 %{max}"
+      annualized: 每年費用
+      ytd: 今年已付
+      last_account: 上次付款帳戶
+      upcoming: 接下來
+      manual_payment: 手動登錄的付款
+      history: 歷史紀錄
+      payment_count:
+        one: 1 筆付款
+        other: "%{count} 筆付款"
+      notes: 備註
+      trial_chip: "試用至 %{date}"
+      renews_chip: "%{date} 續訂"
+      cancelled_chip: "%{date} 已取消"
+      price_changes: 費用變動
+      price_change_line: "%{from} → %{to}"
+    month_pulse:
+      bill_count:
+        one: 1 筆帳單
+        other: "%{count} 筆帳單"
+      left_to_pay: 本月待繳
+      pulse_paid: 已付
+      pulse_overdue: 已逾期
+      pulse_next_seven: 未來 7 天到期
+      pulse_until: "截至 %{date}"
+      pulse_bar_aria: "本月帳單已付 %{percent}%"
+      next_up: 近期到期
+      view_calendar: 查看月曆
+      date_today: 今天
+      date_tomorrow: 明天
+      unconvertible:
+        one: 1 筆帳單因缺少匯率，未計入合計。
+        other: "%{count} 筆帳單因缺少匯率，未計入合計。"
+    summary:
+      remaining: "尚待支付 %{amount}"
+      paid_headline: "已付 %{amount}"
+    add_bill: 新增帳單
+    manage: 查看
+    find_payment: 尋找付款
+    add_payment: 補登付款
+    review_match: 確認配對
+    resolve: 處理
+    manage_payments: 管理付款
+    match:
+      same_merchant: 相同商家
+      name_matches: 名稱相符
+      same_transfer: 轉入相同帳戶
+      exact_amount: 金額相同
+      amount_off: "相差 %{amount}"
+      due_date: 日期與到期日相符
+      days_before:
+        one: 到期前 1 天
+        other: "到期前 %{count} 天"
+      days_after:
+        one: 到期後 1 天
+        other: "到期後 %{count} 天"
+    attention:
+      paused: 已暫停
+      needs_review: 配對待確認
+      partial: 已付部分款項
+      amount_changed: 金額有變動
+      overdue:
+        one: 已逾期 1 天
+        other: "已逾期 %{count} 天"
+    paid_label: 已付清
+    paid_over_short: 已付，超過應付
+    installment_progress: "第 %{done_plus_one}／%{total} 期"
+    partial_progress: "已付 %{paid}／應付 %{expected}"
+    cancelled_still_scheduled: "你已註記在 %{date} 取消，但週期仍在啟用中。暫停此帳單後才會停止產生後續帳單。"
+    paid_over: "已付 %{paid}，超過預期金額"
+    remaining_label: 尚待支付
+    debt_payment: 債務還款
+    paid_from: "由 %{account} 付款"
+    amount_range: "%{min} 至 %{max}"
+    possible_duplicate: 可能重複
+    due_label:
+      overdue:
+        one: "已逾期 1 天，原到期日 %{date}"
+        other: "已逾期 %{count} 天，原到期日 %{date}"
+      today: 今天到期
+      settled: "原到期日 %{date}"
+      due_since: "到期日 %{date}"
+      snoozed: "已延後至 %{date}"
+      upcoming:
+        one: "明天到期，%{date}"
+        other: "%{count} 天後到期，%{date}"
+    views:
+      aria_label: 帳單檢視方式
+      overview: 總覽
+      calendar: 月曆
+      paycheck: 收入規劃
+      all: 所有帳單
+    pay_period:
+      paycheck_on: "%{date} 收入入帳"
+      before_next_paycheck: 下次收入入帳前
+      due_before_date: "%{date} 前應付 %{amount}"
+    paycheck:
+      unconvertible:
+        one: 1 筆應付款項因缺少匯率，未計入合計。
+        other: "%{count} 筆應付款項因缺少匯率，未計入合計。"
+      income_section_title: 收入時程
+      manage: 管理
+      add_income: 新增收入
+      income_paused: 已暫停，未納入規劃
+      income_detected: 自動辨識，尚未設定入帳日
+      income_next_payday: "下次 %{date}"
+      income_source_count:
+        one: "%{count} 個收入來源"
+        other: "%{count} 個收入來源"
+      next_on: "下次 %{date}"
+      no_upcoming_income: 尚未排定之後的收入。
+      empty:
+        title: 設定收入時程
+        description: 新增收入時程，就能查看每次收入需要負擔哪些帳單。自動辨識的入帳交易不會直接成為收入時程，請先確認並新增。
+        action: 新增收入
+      all_clear:
+        title: 這段期間沒有待繳帳單
+        description: "目前至 %{date} 之間沒有到期帳單。"
+      safe_after_bills: 繳完帳單後剩餘
+      short_after_bills: 繳款資金缺口
+      period_source: " · %{source}"
+      period_source_multiple: " · %{count} 個收入來源"
+      before_next_paycheck: "%{date} 前"
+      no_income_arriving: 沒有收入入帳
+      income_amount: "收入 %{amount}"
+      due_this_period: 本期應付
+      reserved_ahead: 預留後續帳單
+      safe_short: 剩餘
+      short_short: 缺口
+      reserved_footer:
+        one: 已為後續 1 筆帳單預留款項
+        other: "已為後續 %{count} 筆帳單預留款項"
+      bills_this_period:
+        one: 本期帳單 · 1 筆
+        other: "本期帳單 · %{count} 筆"
+      bills_before_payday:
+        one: 下次入帳前的帳單 · 1 筆
+        other: "下次入帳前的帳單 · %{count} 筆"
+      of_total: "／%{amount}"
+      bridge_label: 下次收入入帳前
+      bridge_amount: "· 應付 %{amount}"
+      bridge_split: "%{date} 前的帳單，可由帳戶現有的 %{cash} 支付。"
+      bridge_left: "繳款後剩餘 %{amount}"
+      bridge_show_more:
+        one: 再顯示 1 筆
+        other: "再顯示 %{count} 筆"
+      bridge_allocation_aria: "帳戶現有 %{cash}，下次入帳前應付 %{due}，繳款後剩餘 %{left}。"
+      item_overdue: 已逾期
+      shortfall_label: 下次入帳前的資金缺口
+      shortfall_amount: "· %{amount}"
+      shortfall_split: "%{date} 前應付 %{obligations}，帳戶現有 %{cash}。"
+      shortfall_largest: 最大筆的近期應付款項：
+      review_plan: 查看規劃
+      allocation_aria: "收入 %{income} 中，本期應付 %{due}、預留後續 %{reserved}，剩餘 %{safe}。"
+      allocation_aria_short: "本期收入 %{income} 已全數分配，仍短缺 %{short}。"
+    reset_feed_token:
+      done: 月曆訂閱連結已重設。舊連結將停止更新，請使用新連結重新訂閱。
+      confirm: 要重設月曆訂閱連結嗎？所有已分享的舊連結都會失效。
+    calendar:
+      subscribe_ical: 訂閱月曆（iCal）
+      reset_feed: 重設訂閱連結
+      previous_month: 上個月
+      next_month: 下個月
+      today: 今天
+      month_totals: "預計 %{expected} · 已付 %{paid}"
+      empty_month: 本月沒有到期帳單。
+    all:
+      search_placeholder: 搜尋帳單
+      current_bills: 目前帳單
+      dismissed_hidden_description: 已忽略的帳單目前不顯示。
+      status_filters:
+        overdue: 已逾期
+        due: 即將到期
+        partial: 已付部分款項
+        paid: 已付清
+        paused: 已暫停
+        ended: 已忽略
+      subscription_monthly: 每月費用
+      subscription_annual: 每年費用
+      subscription_active: 使用中訂閱
+      subscription_price_changes: 今年的費用變動
+      subscription_price_change_line: "%{from} → %{to}（%{percent}%）"
+      any_type: 所有類型
+      sort_due: 依下次到期日
+      sort_name: 依名稱
+      sort_amount: 依金額
+      no_matches_title: 沒有符合的帳單
+      no_matches_description: 試著清除篩選條件或搜尋文字。
+      col_name: 名稱
+      col_amount: 金額
+      col_next: 下次到期
+      col_actions: 操作
+      monthly_equivalent: "%{amount}／月"
+      types:
+        bill: 帳單
+        subscription: 訂閱
+        installment: 分期付款
+        income: 收入
+        transfer: 轉帳
+        other: 其他
+    show:
+      edit: 編輯帳單
+    index:
+      description: 集中查看到期日、付款狀態與定期帳單。
+      left_to_pay: 待繳金額
+      paid_so_far: 目前已付
+      hero_past_due: "%{amount} 已逾期"
+      hero_next_seven: "未來 7 天應付 %{amount}"
+      add_bill: 新增帳單
+      add_income: 新增收入
+      review_with_ai: AI 協助檢查
+      detected_review:
+        one: 從交易紀錄找到 1 筆定期付款，請先確認是否為你要追蹤的帳單。
+        other: "從交易紀錄找到 %{count} 筆定期付款，請先確認是否為你要追蹤的帳單。"
+      detected_review_action: 查看並確認
+      notices_heading: 最新變動
+      needs_review: 待確認
+      notice_trial: "%{name} 的試用期將於 %{date} 結束"
+      notice_renewal: "%{name} 將於 %{date} 續訂"
+      notice_price: "%{name} 的費用變動：%{from} → %{to}（%{percent}）"
+      notices_routine:
+        one: 另有 1 項變動
+        other: "另有 %{count} 項變動"
+      suggestion_line: "%{entry} 可能是 %{bill} 的付款"
+      suggestion_unknown_entry: 一筆交易
+      confidence: "配對相符程度 %{percent}%"
+      accept: 套用
+      reject: 不是這筆帳單
+      title: 帳單
+      summary_label: 本月到期
+      summary_count:
+        one: 1 筆帳單到期
+        other: "%{count} 筆帳單到期"
+      summary_needs_action:
+        one: 1 筆待處理
+        other: "%{count} 筆待處理"
+      all_automatic: 全部自動扣款
+      recurring_label: 定期應付款項
+      recurring_monthly: "每月 %{amount}"
+      recurring_annual: "每年 %{amount}"
+      unconvertible:
+        one: 1 筆帳單因缺少匯率，未計入合計。
+        other: "%{count} 筆帳單因缺少匯率，未計入合計。"
+      overdue: 已逾期
+      needs_attention: 優先處理
+      attention_overdue_total: "逾期合計 %{amount}"
+      this_month: 本月帳單
+      later: 下個月起
+      paid_this_month: 本月已付
+      dormant: 已暫停
+      kpi_remaining: 本月待繳
+      kpi_paid: 本月已付
+      kpi_next_seven: 未來 7 天應付
+      kpi_past_due: 已逾期
+      paid_count:
+        one: 1 筆已付清
+        other: "%{count} 筆已付清"
+      needs_action_count:
+        one: 1 筆待處理
+        other: "%{count} 筆待處理"
+      empty:
+        title: 尚未建立帳單
+        description: 帳單用來追蹤定期支出。Sure 可從交易紀錄辨識帳單，也能加上付款連結，方便前往繳款。
+        action: 尋找定期交易
+        no_history_description: 尚無交易紀錄。連結帳戶或匯入紀錄後，Sure 就能辨識帳單；也可以先手動新增。
