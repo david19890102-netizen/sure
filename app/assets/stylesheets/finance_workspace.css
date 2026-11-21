@@ -113,7 +113,7 @@
   --color-destructive: #ff728f;
   --color-warning: #ffe178;
   --color-gray: #c8b2d7;
-  --utility-text-inverse: #fff1ff;
+
 }
 /* Keep the semantic colors used by the loan chart responsive to theme changes. */
 [data-theme="dark"] .finance-workspace {

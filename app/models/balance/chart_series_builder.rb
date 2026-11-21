@@ -12,8 +12,8 @@ class Balance::ChartSeriesBuilder
       .transform_values { |date| date.to_date.iso8601 }
   end
 
-  def balance_series
-    build_series_for(:end_balance)
+  def balance_series(trim_untracked_start: false)
+    build_series_for(:end_balance, trim_untracked_start: trim_untracked_start)
   rescue => e
     Rails.logger.error "Balance series error: #{e.message} for accounts #{@account_ids}"
     raise
@@ -71,8 +71,10 @@ class Balance::ChartSeriesBuilder
     end
 
     # Builds a balance series for a balance column and its matching start column.
-    def build_series_for(column)
-      values = query_data.map do |datum|
+    def build_series_for(column, trim_untracked_start: false)
+      rows = query_data
+      rows = rows.drop_while { |row| row.tracked_count.zero? } if trim_untracked_start
+      values = rows.map do |datum|
         if @strict_currency_conversion && datum[:missing_currency].present?
           raise Money::ConversionError.new(from_currency: datum[:missing_currency], to_currency: currency, date: datum.date)
         end
@@ -179,6 +181,7 @@ class Balance::ChartSeriesBuilder
         )
         SELECT
           d.date,
+          COUNT(last_bal.end_balance * #{balance_rate_sql}) AS tracked_count,
           MIN(accounts.currency) FILTER (
             WHERE accounts.currency <> :target_currency
               AND last_bal.end_balance <> 0 AND (er.rate IS NULL OR er.rate <= 0)

@@ -36,6 +36,19 @@ class Balance::ChartSeriesBuilderTest < ActiveSupport::TestCase
     assert_equal expected, builder.balance_series.last(5).map { |v| v.value.amount }
   end
 
+  test "trimming starts at the first recorded balance even when it is zero" do
+    account = accounts(:depository)
+    account.balances.destroy_all
+    opening = 2.days.ago.to_date
+    create_balance(account: account, date: opening, balance: 0)
+    create_balance(account: account, date: Date.current, balance: 125)
+    builder = Balance::ChartSeriesBuilder.new(account_ids: [ account.id ], currency: "USD", period: Period.last_30_days)
+
+    series = builder.balance_series(trim_untracked_start: true)
+    assert_equal opening, series.first.date
+    assert_equal [ 0, 0, 125 ], series.map { |point| point.value.amount }
+  end
+
   test "exchange rates apply locf when missing" do
     account = accounts(:depository)
     account.balances.destroy_all

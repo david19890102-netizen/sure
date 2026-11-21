@@ -463,7 +463,18 @@ export default class extends Controller {
   }
 
   _bindTooltipHandlers(selection) {
+    const inspect = (event) => {
+      const [x] = d3.pointer(event, this._d3Group.node());
+      this._renderTooltipAt(this._nearestDataPointForPixel(x), event.pageX, event.pageY);
+    };
     selection
+      .style("touch-action", "pan-y pinch-zoom")
+      .on("pointerdown.inspect pointermove.inspect", (event) => {
+        if (event.pointerType !== "touch" || !event.isPrimary) return;
+        if (event.type === "pointerdown") event.preventDefault();
+        inspect(event);
+      })
+      .on("pointercancel.inspect", () => this._hideTooltip())
       .on("mousemove", (event) => {
         const [xPos] = d3.pointer(event);
         const datum = this._nearestDataPointForPixel(xPos);
@@ -527,6 +538,11 @@ export default class extends Controller {
       .attr("fill", this._trendColor)
       .attr("pointer-events", "none");
 
+    const parent = this._d3Tooltip?.node().offsetParent;
+    const origin = parent && parent !== document.body ? parent.getBoundingClientRect() : null;
+    const offsetX = origin ? origin.left + window.scrollX : 0;
+    const offsetY = origin ? origin.top + window.scrollY : 0;
+
     // Render tooltip. Optional, to match _hideTooltip: the brush drives this
     // method unconditionally, so a selectable chart with use_tooltip=false has
     // no tooltip node — but it still gets the guideline and circles above.
@@ -534,8 +550,8 @@ export default class extends Controller {
       ?.html(this._tooltipTemplate(datum))
       .style("opacity", 1)
       .style("z-index", 999)
-      .style("left", `${adjustedX}px`)
-      .style("top", `${pageY - 10}px`);
+      .style("left", `${adjustedX - offsetX}px`)
+      .style("top", `${pageY - offsetY - 10}px`);
   }
 
   _hideTooltip() {
@@ -736,7 +752,8 @@ export default class extends Controller {
 
   _setupResizeObserver() {
     this._resizeObserver = new ResizeObserver(() => {
-      this._reinstall();
+      if (this.element.clientWidth !== this._d3InitialContainerWidth ||
+          this.element.clientHeight !== this._d3InitialContainerHeight) this._reinstall();
     });
     this._resizeObserver.observe(this.element);
   }

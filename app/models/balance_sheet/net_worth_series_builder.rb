@@ -4,8 +4,8 @@ class BalanceSheet::NetWorthSeriesBuilder
     @user = user
   end
 
-  def net_worth_series(period: Period.last_30_days)
-    Rails.cache.fetch(cache_key(period)) do
+  def net_worth_series(period: Period.last_30_days, trim_untracked_start: false)
+    Rails.cache.fetch([ cache_key(period), trim_untracked_start ]) do
       builder = Balance::ChartSeriesBuilder.new(
         account_ids: historical_account_ids,
         account_active_until_dates: disabled_account_active_until_dates,
@@ -14,7 +14,7 @@ class BalanceSheet::NetWorthSeriesBuilder
         favorable_direction: "up"
       )
 
-      builder.balance_series
+      builder.balance_series(trim_untracked_start: trim_untracked_start)
     end
   end
 
@@ -45,7 +45,7 @@ class BalanceSheet::NetWorthSeriesBuilder
     def cache_key(period)
       shares_version = user ? AccountShare.where(user: user).maximum(:updated_at)&.to_i : nil
       key = [
-        "balance_sheet_net_worth_series_historical",
+        "balance_sheet_net_worth_series_historical_v2",
         ExchangeRate::CONVERSION_CACHE_VERSION,
         # A rate stored later can bring back an account the series left out.
         ExchangeRate.maximum(:updated_at)&.to_i,

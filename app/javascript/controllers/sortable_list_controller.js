@@ -166,7 +166,7 @@ export default class extends Controller {
     // Dashboard widgets contain interactive charts and controls. Holding their
     // content should never initiate card reordering; reserve touch reordering
     // for the card header. Other sortable lists keep their existing behavior.
-    if (this.element.id === "dashboard_sections" || this.element.querySelector("[data-section-key]")) {
+    if (event.currentTarget.hasAttribute("data-section-key")) {
       if (event.target.closest("[data-dashboard-section-target='content']")) return;
       if (event.target.closest("button, a, input, select, textarea, summary, [role='button']")) return;
     }

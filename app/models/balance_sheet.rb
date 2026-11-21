@@ -45,8 +45,8 @@ class BalanceSheet
     assets.total - liabilities.total
   end
 
-  def net_worth_series(period: Period.last_30_days)
-    net_worth_series_builder.net_worth_series(period: period)
+  def net_worth_series(period: Period.last_30_days, trim_untracked_start: false)
+    net_worth_series_builder.net_worth_series(period: period, trim_untracked_start: trim_untracked_start)
   end
 
   def currency
