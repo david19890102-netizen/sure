@@ -1,21 +1,21 @@
 <%# locals: (statement:, period:, as_of:) %>
-<% unrealized = statement.unrealized_gains_trend %>
-<% period_return = statement.period_return_trend(period: period) %>
+<% metrics = {
+  portfolio_value: statement.portfolio_value_money,
+  cash_balance: statement.cash_balance_money,
+  unrealized: statement.unrealized_gains_trend,
+  period_return: statement.period_return_trend(period: period)
+} %>
 <div class="space-y-4">
   <p class="text-sm text-secondary"><%= period.comparison_label %></p>
   <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <% { portfolio_value: statement.portfolio_value_money, cash_balance: statement.cash_balance_money }.each do |key, value| %>
-      <div class="bg-container-inset rounded-lg p-4 min-w-0">
-        <dt class="text-sm text-secondary"><%= t(".#{key}") %></dt>
-        <dd class="text-xl font-semibold text-primary tabular-nums break-words privacy-sensitive"><%= format_money(value) %></dd>
-      </div>
-    <% end %>
-    <% { unrealized: unrealized, period_return: period_return }.each do |key, trend| %>
+    <% metrics.each do |key, value| %>
       <div class="bg-container-inset rounded-lg p-4 min-w-0">
         <dt class="text-sm text-secondary"><%= t(".#{key}") %></dt>
         <dd>
-          <% if trend %>
-            <%= render "shared/trend_change", trend: trend %>
+          <% if value.is_a?(Money) %>
+            <span class="text-xl font-semibold text-primary tabular-nums break-words privacy-sensitive"><%= format_money(value) %></span>
+          <% elsif value %>
+            <%= render "shared/trend_change", trend: value %>
           <% else %>
             <span class="text-sm text-secondary"><%= t(".no_data") %></span>
           <% end %>
