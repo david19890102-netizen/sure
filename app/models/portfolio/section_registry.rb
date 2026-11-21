@@ -97,9 +97,15 @@ class Portfolio::SectionRegistry
     # (the attachment, the accountable's colour, the provider links and the
     # provider each falls back to) loaded here rather than once per card.
     def accounts_for_cards
-      @accounts_for_cards ||= statement.investment_accounts.with_attached_logo
-        .includes(:accountable, :plaid_account, :simplefin_account, account_providers: :provider)
-        .alphabetically.order(:id).to_a
+      @accounts_for_cards ||= begin
+        accounts = statement.investment_accounts.to_a.sort_by { |account| [ account.name, account.id ] }
+        ActiveRecord::Associations::Preloader.new(
+          records: accounts,
+          associations: [ :accountable, :plaid_account, :simplefin_account,
+            { logo_attachment: :blob }, { account_providers: :provider } ]
+        ).call
+        accounts
+      end
     end
 
     def shared_locals

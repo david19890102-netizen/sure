@@ -29,10 +29,12 @@ class MobileChartNavigationTest < ApplicationSystemTestCase
     JS
 
     expected = page.evaluate_script(<<~JS)
-      const chart = document.querySelector("#netWorthChart");
-      const line = chart.querySelector(".guideline");
-      const circles = chart.querySelectorAll(".data-point-circle");
-      Number(line.getAttribute("x1")) === Number(circles[0].getAttribute("cx"));
+      (() => {
+        const chart = document.querySelector("#netWorthChart");
+        const line = chart.querySelector(".guideline");
+        const circles = chart.querySelectorAll(".data-point-circle");
+        return Number(line.getAttribute("x1")) === Number(circles[0].getAttribute("cx"));
+      })()
     JS
     assert expected
   end
