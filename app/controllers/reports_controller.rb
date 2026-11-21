@@ -194,6 +194,14 @@ class ReportsController < ApplicationController
       )
       all_sections = [
         {
+          key: "summary",
+          title: "reports.summary.title",
+          partial: "reports/summary_dashboard",
+          locals: { metrics: @summary_metrics, period_type: @period_type },
+          visible: true,
+          collapsible: true
+        },
+        {
           key: "net_worth",
           title: "reports.net_worth.title",
           partial: "reports/net_worth",

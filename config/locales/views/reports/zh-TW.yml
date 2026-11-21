@@ -44,6 +44,7 @@ zh-TW:
       next_decade: 下一個十年
     invalid_date_range: 結束日期不能早於開始日期。日期已自動對調。
     summary:
+      title: 收支總覽
       total_income: 總收入
       total_expenses: 總支出
       net_savings: 淨儲蓄

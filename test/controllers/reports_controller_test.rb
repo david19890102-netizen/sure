@@ -51,12 +51,12 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=group][aria-label='Report book'] a[aria-current=true]", text: "All"
   end
 
-  test "the combined net worth curve leads by default and remembers the display mode" do
+  test "the summary leads the reorderable net worth curve and remembers the display mode" do
     get reports_path
 
     assert_response :success
     keys = css_select("[data-section-key]").map { |node| node["data-section-key"] }
-    assert_equal "net_worth", keys.first
+    assert_equal %w[summary net_worth], keys.first(2)
     assert_not_includes keys, "net_worth_change"
     assert_select "[data-sortable-list-id=net_worth] span.cursor-grab"
     assert_select "#reportsNetWorthChart, #reports-net-worth-change-empty"
