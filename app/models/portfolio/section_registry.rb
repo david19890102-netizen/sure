@@ -17,7 +17,7 @@ class Portfolio::SectionRegistry
   # The built-in section keys, in declaration order. The preferences
   # endpoint accepts only these, so a saved order or collapsed set cannot
   # carry arbitrary strings into the user's preferences.
-  KEYS = %w[stock_assets accounts].freeze
+  KEYS = %w[stock_assets accounts performance].freeze
 
   attr_reader :statement, :period, :as_of, :user, :extra_sections
 
@@ -78,6 +78,14 @@ class Portfolio::SectionRegistry
           title: "portfolios.sections.accounts",
           partial: "portfolios/accounts",
           locals: shared_locals.merge(accounts: accounts_for_cards),
+          visible: accounts_for_cards.any?,
+          collapsible: true
+        },
+        {
+          key: "performance",
+          title: "portfolios.sections.performance",
+          partial: "portfolios/performance",
+          locals: shared_locals,
           visible: accounts_for_cards.any?,
           collapsible: true
         }

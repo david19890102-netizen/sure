@@ -13,6 +13,10 @@
   <%= javascript_importmap_tags %>
   <%= render "layouts/dark_mode_check" %>
   <%= render "layouts/privacy_mode_check" %>
+  <%# A cached preview is replaced by the response, resetting a scroll started
+      while that response is still loading. Keep history snapshots but show
+      advance visits only when their response is ready. %>
+  <meta name="turbo-cache-control" content="no-preview">
   <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
 
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">

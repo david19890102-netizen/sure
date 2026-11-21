@@ -139,14 +139,6 @@
   <%= render "shared/exchange_rate_notes", family: Current.family %>
 
   <% if Current.family.transactions.any? %>
-    <%# Summary Dashboard - Always visible, not collapsible %>
-    <section>
-      <%= render partial: "reports/summary_dashboard", locals: {
-        metrics: @summary_metrics,
-        period_type: @period_type
-      } %>
-    </section>
-
     <%# Collapsible & Reorderable Sections %>
     <%= render "shared/reorderable_sections",
           sections: @reports_sections,

@@ -476,7 +476,7 @@ export default class extends Controller {
       })
       .on("pointercancel.inspect", () => this._hideTooltip())
       .on("mousemove", (event) => {
-        const [xPos] = d3.pointer(event);
+        const [xPos] = d3.pointer(event, this._d3Group.node());
         const datum = this._nearestDataPointForPixel(xPos);
 
         this._renderTooltipAt(datum, event.pageX, event.pageY);
@@ -510,6 +510,7 @@ export default class extends Controller {
     this._d3Group
       .append("line")
       .attr("class", "guideline text-subdued")
+      .attr("pointer-events", "none")
       .attr("x1", this._d3XScale(datum.date))
       .attr("y1", 0)
       .attr("x2", this._d3XScale(datum.date))

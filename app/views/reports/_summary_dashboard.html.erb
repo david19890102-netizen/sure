@@ -1,6 +1,6 @@
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
   <%# Total Income Card %>
-  <div class="bg-container rounded-xl shadow-border-xs p-4 sm:p-6">
+  <div class="min-w-0 p-2 sm:p-4">
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-2">
         <%= icon("trending-up", size: "sm") %>
@@ -11,7 +11,7 @@
     </div>
 
     <div class="space-y-2">
-      <p class="text-2xl font-semibold text-primary tabular-nums break-words privacy-sensitive">
+      <p class="text-xl sm:text-2xl font-semibold text-primary tabular-nums break-words privacy-sensitive">
         <%= reports_money(metrics[:current_income]) %>
       </p>
 
@@ -37,7 +37,7 @@
   </div>
 
   <%# Total Expenses Card %>
-  <div class="bg-container rounded-xl shadow-border-xs p-4 sm:p-6">
+  <div class="min-w-0 p-2 sm:p-4">
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-2">
         <%= icon("trending-down", class: "w-5 h-5") %>
@@ -48,7 +48,7 @@
     </div>
 
     <div class="space-y-2">
-      <p class="text-2xl font-semibold text-primary tabular-nums break-words privacy-sensitive">
+      <p class="text-xl sm:text-2xl font-semibold text-primary tabular-nums break-words privacy-sensitive">
         <%= reports_money(metrics[:current_expenses]) %>
       </p>
 
@@ -74,7 +74,7 @@
   </div>
 
   <%# Net Savings Card %>
-  <div class="bg-container rounded-xl shadow-border-xs p-4 sm:p-6">
+  <div class="min-w-0 p-2 sm:p-4">
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-2">
         <%= icon("piggy-bank", class: "w-5 h-5") %>
@@ -85,7 +85,7 @@
     </div>
 
     <div class="space-y-2">
-      <p class="text-2xl font-semibold tabular-nums break-words privacy-sensitive <%= metrics[:net_savings] >= 0 ? "text-success" : "text-destructive" %>">
+      <p class="text-xl sm:text-2xl font-semibold tabular-nums break-words privacy-sensitive <%= metrics[:net_savings] >= 0 ? "text-success" : "text-destructive" %>">
         <%= reports_money(metrics[:net_savings]) %>
       </p>
 
@@ -96,7 +96,7 @@
   </div>
 
   <%# Budget Performance Card %>
-  <div class="bg-container rounded-xl shadow-border-xs p-4 sm:p-6">
+  <div class="min-w-0 p-2 sm:p-4">
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-2">
         <%= icon("gauge", class: "w-5 h-5") %>
@@ -108,7 +108,7 @@
 
     <div class="space-y-2">
       <% if metrics[:budget_percent] %>
-        <p class="text-2xl font-semibold text-primary privacy-sensitive">
+        <p class="text-xl sm:text-2xl font-semibold text-primary privacy-sensitive">
           <%= metrics[:budget_percent] %>%
         </p>
 

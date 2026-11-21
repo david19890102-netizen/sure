@@ -6,6 +6,7 @@ zh-TW:
       description: 這裡會顯示已納入財務與報表的證券、退休及加密貨幣帳戶與餘額。
       title: 沒有可顯示的投資帳戶
     sections:
+      performance: 投資績效
       accounts: 帳戶
       stock_assets: 股票資產
     show:
@@ -40,3 +41,10 @@ zh-TW:
       title: 股票資產月增率
       worst: 最差月
       zero: "基準線 %{value}"
+
+    performance:
+      portfolio_value: 投資組合總值
+      cash_balance: 帳戶現金
+      unrealized: 未實現損益
+      period_return: 區間市場損益
+      no_data: 餘額或成本歷史不足

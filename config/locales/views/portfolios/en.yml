@@ -6,6 +6,7 @@ en:
       description: Brokerage, retirement and crypto accounts you include in your finances and reports are listed here with their balance.
       title: No investment accounts to show
     sections:
+      performance: Investment performance
       accounts: Accounts
       stock_assets: Stock assets
     show:
@@ -40,3 +41,10 @@ en:
       title: Monthly stock value growth
       worst: Worst month
       zero: "Baseline %{value}"
+
+    performance:
+      portfolio_value: Portfolio value
+      cash_balance: Cash balance
+      unrealized: Unrealized gain / loss
+      period_return: Period market gain / loss
+      no_data: Insufficient balance or cost history

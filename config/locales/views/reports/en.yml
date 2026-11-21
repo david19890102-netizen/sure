@@ -45,6 +45,7 @@ en:
       next_decade: "Next decade"
     invalid_date_range: "End date cannot be before start date. The dates have been swapped."
     summary:
+      title: Overview
       total_income: Total Income
       total_expenses: Total Expenses
       net_savings: Net Savings
