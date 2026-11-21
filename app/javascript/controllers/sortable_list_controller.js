@@ -163,6 +163,14 @@ export default class extends Controller {
   // (finger moves before the hold delay elapses) cancels it.
 
   touchStart(event) {
+    // Dashboard widgets contain interactive charts and controls. Holding their
+    // content should never initiate card reordering; reserve touch reordering
+    // for the card header. Other sortable lists keep their existing behavior.
+    if (event.currentTarget.matches("[data-controller~='dashboard-section']")) {
+      if (event.target.closest("[data-dashboard-section-target='content']")) return;
+      if (event.target.closest("button, a, input, select, textarea, summary, [role='button']")) return;
+    }
+
     // The second finger of a pinch; the document listener cancelled the hold.
     if (event.touches.length > 1) return;
 

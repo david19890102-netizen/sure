@@ -6,15 +6,15 @@
 <html
   lang="en"
   data-theme="<%= theme %>"
-  data-controller="theme viewport"
+  data-controller="theme"
   data-theme-user-preference-value="<%= Current.user&.theme || "system" %>"
-  class="h-[var(--app-height, 100dvh)] text-primary bg-surface overflow-hidden overscroll-none font-sans <%= @os %>">
+  class="h-screen supports-[height:100svh]:h-svh text-primary bg-surface overflow-hidden overscroll-none font-sans <%= @os %>">
   <head>
     <%= render "layouts/shared/head" %>
     <%= yield :head %>
   </head>
 
-  <body class="h-[var(--app-height)] overflow-hidden antialiased"<% if sidebar_aware %> data-controller="notification-tray"<% end %>>
+  <body class="h-full overflow-hidden antialiased"<% if sidebar_aware %> data-controller="notification-tray"<% end %>>
     <% if Rails.env.development? %>
       <button hidden data-controller="hotkey" data-hotkey="t t /" data-action="theme#toggle"></button>
     <% end %>

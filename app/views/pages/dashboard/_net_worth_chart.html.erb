@@ -1,6 +1,5 @@
 <%# locals: (balance_sheet:, period:, **args) %>
-<% series = balance_sheet.net_worth_series(period: period) %>
-<% change = BalanceSheet::PeriodChange.new(series) %>
+<% series = balance_sheet.net_worth_series(period: period, trim_untracked_start: true) %>
 
 <div id="net-worth-chart" class="finance-net-worth">
   <div class="min-w-0">
@@ -9,15 +8,15 @@
       <p class="text-primary text-3xl sm:text-4xl tabular-nums font-semibold privacy-sensitive <%= "animate-pulse" if balance_sheet.syncing? %>">
         <%= format_money(balance_sheet.net_worth_money) %>
       </p>
-      <% if change.comparable? %>
-        <%= render "shared/trend_change", trend: change.trend, comparison_label: period.comparison_label %>
-      <% elsif change.current %>
+      <% if series.values.size >= 2 %>
+        <%= render "shared/trend_change", trend: series.trend, comparison_label: (series.first.date == period.start_date ? period.comparison_label : t(".since_date", date: series.first.date_formatted)) %>
+      <% elsif series.any? %>
         <p id="net-worth-no-baseline" class="text-sm text-secondary"><%= t(".no_baseline") %></p>
       <% end %>
     </div>
     <% if series.any? %>
       <div id="netWorthChart"
-           class="w-full min-h-52 privacy-sensitive"
+           class="relative w-full min-h-52 privacy-sensitive"
            style="height: var(--dash-widget-h, 13rem);"
            data-controller="time-series-chart"
            data-time-series-chart-data-value="<%= series.to_json %>"
